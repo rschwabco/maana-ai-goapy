@@ -27,45 +27,45 @@ type Info {
   description: String
 }
 
-type State {
+type GoapVar {
   id: ID!
   val: Boolean!
 }
 
-type Action {
+type GoapAction {
   id: ID!
-  pre: [State!]!
-  post: [State!]!
+  pre: [GoapVar!]!
+  post: [GoapVar!]!
 }
 
-type Scenario {
+type GoapScenario {
   id: ID!
-  goal: [State!]!
-  state: [State!]!
-  actions: [Action!]!
+  goal: [GoapVar!]!
+  state: [GoapVar!]!
+  actions: [GoapAction!]!
 }
 
-input StateInput {
+input GoapVarInput {
   id: ID!
   val: Boolean!
 }
 
-input ActionInput {
+input GoapActionInput {
   id: ID!
-  pre: [StateInput!]!
-  post: [StateInput!]!
+  pre: [GoapVarInput!]!
+  post: [GoapVarInput!]!
 }
 
-input ScenarioInput {
+input GoapScenarioInput {
   id: ID!
-  goal: [StateInput!]!
-  state: [StateInput!]!
-  actions: [ActionInput!]!
+  goal: [GoapVarInput!]!
+  state: [GoapVarInput!]!
+  actions: [GoapActionInput!]!
 }
 
 type Query {
   info: Info!
-  plan(scenario: ScenarioInput!): [ID!]!
+  plan(scenario: GoapScenarioInput!): [ID!]!
 }
 
 """)
@@ -112,7 +112,7 @@ def plan(scenario):
 
 def info():
     return {
-        'id': "maana-ai-goapy",
+        'id': "maana-ai-goap",
         'name': "Goal-Oriented Action Planning in Python",
         'description': ""
     }
