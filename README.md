@@ -15,7 +15,7 @@ pip install uvicorn gunicorn ariadne graphqlclient asgi-lifespan
 Then you can build your image from the directory that has your Dockerfile, e.g:
 
 ```
-docker build -t maana-ai-goapy ./
+docker build -t maana-ai-goap ./
 ```
 
 ## Run Debug Locally
@@ -33,7 +33,7 @@ For details, please refer to the [official documentation](https://github.com/tia
 To run the GraphQL service locally (Via Docker):
 
 ```
-docker run -it -p 4000:80 -t maana-ai-goapy
+docker run -it -p 4000:80 -t maana-ai-goap
 ```
 
 ## Run Debug Locally (via Docker)
@@ -41,7 +41,7 @@ docker run -it -p 4000:80 -t maana-ai-goapy
 To run the GraphQL service via Docker with hot reload:
 
 ```
-docker run -it -p 4000:80 -v $(pwd):/app maana-ai-goapy /start-reload-docker.sh
+docker run -it -p 4000:80 -v $(pwd):/app maana-ai-goap /start-reload-docker.sh
 ```
 
 For details, please refer to the [official documentation](https://github.com/tiangolo/uvicorn-gunicorn-fastapi-docker#development-live-reload).
@@ -50,4 +50,14 @@ For details, please refer to the [official documentation](https://github.com/tia
 
 ```
 gql mdeploy
+```
+
+and follow the prompts, resulting in something resembling:
+
+```bash
+Deploying the service maana-ai-goap:v1.0.0
+Located in .
+Publishing to services.azurecr.io
+Number Of Pods: 1
+Exposing port 80
 ```

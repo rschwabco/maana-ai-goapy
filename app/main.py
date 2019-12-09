@@ -27,39 +27,39 @@ type Info {
   description: String
 }
 
-type GoapVar {
+type GoapState {
   id: ID!
   val: Boolean!
 }
 
 type GoapAction {
   id: ID!
-  pre: [GoapVar!]!
-  post: [GoapVar!]!
+  pre: [GoapState!]!
+  post: [GoapState!]!
 }
 
 type GoapScenario {
   id: ID!
-  goal: [GoapVar!]!
-  state: [GoapVar!]!
+  goal: [GoapState!]!
+  state: [GoapState!]!
   actions: [GoapAction!]!
 }
 
-input GoapVarInput {
+input GoapStateInput {
   id: ID!
   val: Boolean!
 }
 
 input GoapActionInput {
   id: ID!
-  pre: [GoapVarInput!]!
-  post: [GoapVarInput!]!
+  pre: [GoapStateInput!]!
+  post: [GoapStateInput!]!
 }
 
 input GoapScenarioInput {
   id: ID!
-  goal: [GoapVarInput!]!
-  state: [GoapVarInput!]!
+  goal: [GoapStateInput!]!
+  state: [GoapStateInput!]!
   actions: [GoapActionInput!]!
 }
 
