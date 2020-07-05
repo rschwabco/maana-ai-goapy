@@ -1,8 +1,16 @@
-FROM tiangolo/uvicorn-gunicorn:python3.7
+FROM node:alpine
 
-RUN pip install uvicorn gunicorn ariadne graphqlclient asgi-lifespan
-RUN pip install numpy
+WORKDIR /app
 
-COPY ./app /app
-COPY start.sh /start.sh
-WORKDIR /
+COPY package*.json /app/
+
+RUN npm install
+
+COPY src/ /app/src/
+COPY .env /app
+COPY .babelrc /app
+
+# RUN npm build
+CMD npm start
+
+EXPOSE 8050
