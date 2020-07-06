@@ -199,9 +199,20 @@ function distanceTo( properties, source, target, no_weighting=false ){
       throw new Error('Cannot compute distance between worldstates.'
         +`The target world state uses variable ${v.propertyName} that is not defined`)
     const {weight} = properties[prop.propertyName]
-    // compute the weighted distance between the source and 
-    // target properties and add it to the sum
-    totalDistance += distanceToProperty(prop, v, weight, no_weighting)
+    if (v.argumentName) {
+      const arg = TryGetValue( source, v.argumentName, new Binding({properties, propertyName: v.argumentName }) )
+      if (arg == null) 
+        throw new Error('Cannot compute distance between worldstates.'
+        +`The goal state uses variable ${v.argumentName} that is not defined`)
+      arg.operator = v.operator
+      // compute the weighted distance between the source and 
+      // target properties and add it to the sum
+      totalDistance += distanceToProperty(prop, arg, weight, no_weighting)
+    } else {
+      // compute the weighted distance between the source and 
+      // target properties and add it to the sum
+      totalDistance += distanceToProperty(prop, v, weight, no_weighting)
+    }
   }
   return totalDistance
 }
@@ -269,7 +280,7 @@ function applyTransition(properties, transition, current) {
 function applyEffectToWorldstate( properties, worldstate, effect ) {
   let {propertyName, argumentName, typeOf } = effect
   let variable = TryGetValue( worldstate, propertyName, new Binding({properties, propertyName} /* use default value */) )
-  const obj = { }
+  let obj = { }
   obj[typeOf] = effect.value
   let rhs = TryGetValue( worldstate, argumentName, new Binding({properties, propertyName ,typeOf,value:obj}))
   ApplyPropertyEffect( variable, effect.operator, rhs )

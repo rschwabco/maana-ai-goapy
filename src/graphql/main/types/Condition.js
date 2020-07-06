@@ -14,12 +14,12 @@ class Condition {
     if (!property) throw new Error(`Cannot construct condition.  The "${propertyName}" property does not exist.`)
     if (!Types[property.typeOf].comparisonOperators[operator]) throw new Error(`Cannot construct condition.  The ${operator} operator is not supported for the ${property.typeOf} type.`)
     if (argument.propertyName != null) {
-      const argument = properties[argument.propertyName]
-      if (!argument) throw new Error(`Cannot construct condition.  The "${argumentName}" property does not exist.`) 
-      if (argument.typeOf !== property.typeOf) throw new Error(`Cannot construct condition.  "${propertyName}" and "${argumentName} have different types.`) 
-      this.argumentName = argument.propertyName
+      const rhs = properties[argument.propertyName]
+      if (!rhs) throw new Error(`Cannot construct condition.  The "${argument.propertyName}" property does not exist.`) 
+      if (rhs.typeOf !== property.typeOf) throw new Error(`Cannot construct condition.  "${propertyName}" and "${argument.name} have different types.`) 
+      this.argumentName = rhs.name
     } else {
-      if (!Types[keys[0]]) throw new error `Cannot construct condition. The argument type ${keys[0]} is not supported`
+      if (!Types[keys[0]]) throw new Error `Cannot construct condition. The argument type ${keys[0]} is not supported`
       if (keys[0] !== property.typeOf) throw new Error(`Cannot construct condition.  "${propertyName}" and "${argument[keys[0]]}" have different types.`) 
       this.value = argument[keys[0]]
     }

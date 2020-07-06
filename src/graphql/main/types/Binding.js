@@ -12,8 +12,8 @@ class Binding {
     if (value) {
       const keys = Object.keys(value).filter(x => x !== "id" )
       if (keys.length !== 1) throw new Error("Cannot contruct binding.  The value must include one of the optional literal fields") 
-      if (!Types[keys[0]]) throw new error `Cannot construct binding. The argument type ${keys[0]} is not supported`
-      if (keys[0] !== property.typeOf) throw new Error(`Cannot construct binding.  "${propertyName}" and "${argument[key[0]]}" have different types.`) 
+      if (!Types[keys[0]]) throw new Error `Cannot construct binding. The argument type ${keys[0]} is not supported`
+      if (keys[0] !== property.typeOf) throw new Error(`Cannot construct binding.  "${propertyName}" and "${value[keys[0]]}" have different types.`) 
       this.value = value[keys[0]]
     } else {
       this.value = Types[property.typeOf].defaultValue

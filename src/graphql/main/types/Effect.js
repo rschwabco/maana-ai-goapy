@@ -13,14 +13,14 @@ class Effect {
     const property = properties[propertyName]
     if (!property) throw new Error(`Cannot construct effect.  The "${propertyName}" property does not exist.`)
     if (!Types[property.typeOf].assignmentOperators[operator]) throw new Error(`Cannot construct effect.  The ${operator} operator is not supported for the ${property.typeOf} type.`)
-    if (argument.propertyName != null) {
-      const argument = properties[argument.propertyName]
-      if (!argument) throw new Error(`Cannot construct effect.  The "${argumentName}" property does not exist.`) 
-      if (argument.typeOf !== property.typeOf) throw new Error(`Cannot construct effect.  "${propertyName}" and "${argumentName} have different types.`) 
-      this.argumentName = argument.propertyName
+    if (argument.propertyName != null && argument.propertyName !== "" ) {
+      const arg = properties[argument.propertyName]
+      if (!arg) throw new Error(`Cannot construct effect.  The "${argument.propertyName}" property does not exist.`) 
+      if (arg.typeOf !== property.typeOf) throw new Error(`Cannot construct effect.  "${propertyName}" and "${arg.name} have different types.`) 
+      this.argumentName = arg.name
     } else {
       if (!Types[keys[0]]) throw new error `Cannot construct effect. The argument type ${keys[0]} is not supported`
-      if (keys[0] !== property.typeOf) throw new Error(`Cannot construct effect.  "${propertyName}" and "${argument[key[0]]}" have different types.`) 
+      if (keys[0] !== property.typeOf) throw new Error(`Cannot construct effect.  "${propertyName}" and "${argument[keys[0]]}" have different types.`) 
       this.value = argument[keys[0]]
     }
     this.typeOf = property.typeOf

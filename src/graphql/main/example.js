@@ -7,19 +7,14 @@ const { Property } = require('./Types/Property')
 
 const properties =  [
     new Property( { name: "hunger", typeOf: "INT" } ),
-    new Property( { name: "tired", typeOf: "FLOAT" } )
+    new Property( { name: "tired", typeOf: "INT" } )
 ]
 
   const goal = {
     conditions:[{
         propertyName: 'hunger',
         operator: '<',
-        argument: { id: "1:INT", INT: 1},
-      },
-      {
-        propertyName: 'tired',
-        operator: '<',
-        argument: { id: "5:FLOAT", FLOAT: 5},
+        argument: { id: "1:INT", propertyName: "tired"},
       }
     ]
   }
@@ -31,8 +26,8 @@ const properties =  [
     conditions: [
       {
         propertyName: 'hunger',
-        operator: '>',
-        argument: { id: "0:INT", INT:0},
+        operator: '>=',
+        argument: { id: "0:INT", propertyName:"tired"},
       }
     ],
     action:"EAT",
@@ -44,7 +39,7 @@ const properties =  [
     {
       propertyName: 'tired',
       operator: '+=',
-      argument: { id: "0.5:FLOAT", FLOAT: 0.5}
+      argument: { id: "0.5:FLOAT", INT: 1}
     }
   ]
   }
@@ -60,8 +55,11 @@ const initialState = {
   bindings: [{ 
       propertyName: 'hunger',
       value: { id: "5:INT", INT: 5 }
-    }]
+    
+    },
+    { 
+      propertyName: 'tired',
+      value: { id: "0:INT", INT: 0 }}]
 }
 
-
-generatePlan({model:goapmodel,initialState,goal})
+console.debug(JSON.stringify(generatePlan({model:goapmodel,initialState,goal}),null,2))
