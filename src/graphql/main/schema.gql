@@ -237,9 +237,22 @@ type ActionPlan {
 
 type Query {
     info: Info!
-#    validBindingOperators( propertyType: ID! ): [String!]
-#    validComparisonOperators( propertyType: ID! ): [String!]
-
+    """
+    What types can be assigned to properties?
+    """
+    propertyTypes: [ID!]!
+    """
+    Given a type, what are the assignment operators that are defined for properties of that type?
+    """
+    assignmentOperators( propertyType: ID! ): [ID!]!
+    """
+    Given a type, what are the comparison operations that are defined for properties of that type?
+    """
+    comparisonOperators( propertyType: ID! ): [ID!]!
+    """
+    Given a goap model, an intial state, and a collection of goal conditions, what is the least
+    cost action plan that acheives that goal?
+    """
     generateActionPlan( model: GoapModelInput!, initialState: WorldStateInput!, goal: GoalInput! ): ActionPlan!    
 }
 

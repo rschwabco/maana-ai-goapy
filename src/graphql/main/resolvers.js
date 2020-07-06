@@ -3,6 +3,7 @@ import { log, print } from 'io.maana.shared'
 
 import { SELF_ID } from '../../constants'
 import { generatePlanAsync } from './plan'
+import { Types } from './types/constants'
 
 require('dotenv').config()
 
@@ -41,6 +42,15 @@ export const resolver = {
         description: `An implementation of goal oriented action planning (GOAP)`
       }
     },
-    generateActionPlan: generatePlanAsync
+    generateActionPlan: generatePlanAsync,
+    propertyTypes: async () => Object.keys(Types),
+    assignmentOperators: async (_, { propertyType }) =>
+      Object.keys(
+        (Types[propertyType] || { assignmentOperators: {} }).assignmentOperators
+      ),
+    comparisonOperators: async (_, { propertyType }) =>
+      Object.keys(
+        (Types[propertyType] || { comparisonOperators: {} }).comparisonOperators
+      )
   }
 }

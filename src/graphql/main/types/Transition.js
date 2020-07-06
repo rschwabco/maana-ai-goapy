@@ -2,7 +2,7 @@ const { Condition } = require('./Condition')
 const { Effect } = require('./Effect')
 
 class Transition {
-    constructor( input ) {
+  constructor(input) {
       const { properties, id, name, cost, description, conditions, effects, action } = input
       this.id = id,
       this.name = name,
