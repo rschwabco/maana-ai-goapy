@@ -22,7 +22,7 @@ function generatePlan( input ) {
   const {transitions, properties} = model
   const worldstate = new WorldState({...init, properties} )
   const goal = new Goal({ properties, conditions: goalinput.conditions })
-  const nonnullTransitions = transitions.filter( x => x.action != null )
+  const nonnullTransitions = transitions //.filter( x => x.action != null )
   const initialDistance = distanceTo( properties, worldstate, goal )
   let _id = 0
   const nextId = () => { _id++; return _id }
@@ -104,7 +104,7 @@ function generatePlan( input ) {
       }
     }
   } 
-  //In no plan found case we return an empty plan
+  //In no plan found case we return an empty plan 
   return null;
 }
 
@@ -133,7 +133,7 @@ function closeNode( openNodes, closedNodes ) { // PlannerNode_GS
   if (cheapestNodes.length == 1 ){
     openNodes.delete( target.score );
   } else {
-    openNodes.set(target.score, cheapest_nodes.slice(1));
+    openNodes.set(target.score, cheapestNodes.slice(1));
   }
   //Return the closed node
   return target;
@@ -159,12 +159,24 @@ function TryGetValue( state, key, defaultValue ){
 }
 
 function isEnabled(properties, transition, state) {
-  for ( let _condition of transition.conditions ) {
-    const currentProp = state.bindings[ _condition.propertyName ]
-    const { weight } = properties[ _condition.propertyName ]
-    const dist = distanceToProperty( currentProp, _condition, weight, true )
-    if (dist > MIN_PROPERTY_DISTANCE ) return false
+  for ( const condition of transition.conditions ) {
+    const currentProp = TryGetValue(state, condition.propertyName )
+    if (!currentProp) {
+      console.log(state)
+      throw new Error(`Can't determine if transition ${transition.id} is enabled.  I refers to a property ${condition.propertyName} which cannot be found.`)
+    }
+    
+    const { weight } = properties[ condition.propertyName ]
+    if (condition.argumentName && condition.argumentName !== "") {
+      const arg = {...TryGetValue(state, condition.argumentName,new Binding({properties, propertyName:condition.argumentName})), operator: condition.operator || "=="}
+      const dist = distanceToProperty( currentProp, arg, weight, true )
+      if (dist > MIN_PROPERTY_DISTANCE) return false
+    } else {
+      const dist = distanceToProperty( currentProp, { ...condition, operator: condition.operator || "=="}, weight, true )
+      if (dist > MIN_PROPERTY_DISTANCE ) return false
+    }
   }
+
   return true
 }
 
@@ -200,11 +212,11 @@ function distanceTo( properties, source, target, no_weighting=false ){
         +`The target world state uses variable ${v.propertyName} that is not defined`)
     const {weight} = properties[prop.propertyName]
     if (v.argumentName) {
-      const arg = TryGetValue( source, v.argumentName, new Binding({properties, propertyName: v.argumentName }) )
-      if (arg == null) 
+      const temp = { ... TryGetValue( source, v.argumentName, new Binding({properties, propertyName: v.argumentName }) )}
+      if (temp == null) 
         throw new Error('Cannot compute distance between worldstates.'
         +`The goal state uses variable ${v.argumentName} that is not defined`)
-      arg.operator = v.operator
+      const arg = { ...temp, operator: v.operator  }
       // compute the weighted distance between the source and 
       // target properties and add it to the sum
       totalDistance += distanceToProperty(prop, arg, weight, no_weighting)
@@ -236,7 +248,8 @@ function distanceTo( properties, source, target, no_weighting=false ){
 function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=false){
   // deconstruct the input to get the individual properties.
   const { typeOf: lhsType, value: lhsValue } = lhsProperty
-  const { typeOf: rhsType, operator, value: rhsValue } = rhsProperty
+  const { typeOf: rhsType, operator:op, value: rhsValue } = rhsProperty
+  const operator = op || "=="
   // If the types are incompatible, then throw an error.  In the future
   // we might consider upcasting (e.g. Int to Float) when possible.
   if ( lhsType !== rhsType ) throw new Error(`Comparsion type between variable: ${lhsType} and variable: ${rhsType} not supported!`)
@@ -245,10 +258,11 @@ function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=fals
   const typeDef = Types[lhsType]
   if (typeDef == null) throw new Error(`Unsupported type ${lhsType} in distanceToProperty function`)
   const distance = typeDef.comparisonOperators[operator]
-  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not valid for ${lhsType} values` ) 
+  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not supported for ${lhsProperty.propertyName}: ${lhsType}.` ) 
   // compute and return the weighted distance
   const wt = no_weighting ? 1.0 : weight
-  return distance(lhsValue, rhsValue) * wt
+  const d = distance(lhsValue, rhsValue) * wt
+  return d
 }
 
 /** Given a transition and the current worldstate, compute

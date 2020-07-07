@@ -4,18 +4,18 @@ function assignEqual(prop, value) {
 }
 
 const MIN_PROPERTY_DISTANCE = 0.00001
-const ITERATION_LIMIT = 1000
+const ITERATION_LIMIT = 100000
 
 function equalityDistance(lhs, rhs) { return lhs === rhs ? 0.0 : 1.0 }
 function disequalityDistance(lhs, rhs) { return lhs !== rhs ? 0.0 : 1.0 }
-function inequalityDistance(op) {
+function partialOrderDistance(op) {
   return function (lhs, rhs) {
     return op(lhs, rhs) ? 0.0 : Math.abs(lhs - rhs)
   }
 }
-function partialOrderDistance(op) {
+function totalOrderDistance(op) {
   return function (lhs, rhs) {
-    return op(lhs - rhs, 0) ? 0 : op(rhs - lhs, 2 * MIN_PROPERTY_DISTANCE) ? 2 * MIN_PROPERTY_DISTANCE : Math.abs(lhs - rhs)
+    return op(lhs - rhs, 0) ? 0 : Math.abs(rhs - lhs) < 2 * MIN_PROPERTY_DISTANCE ? 2 * MIN_PROPERTY_DISTANCE : Math.abs(lhs - rhs)
   }
 }
 
@@ -58,10 +58,10 @@ module.exports = {
       comparisonOperators: {
         '==': equalityDistance,
         '!=': disequalityDistance,
-        '>': partialOrderDistance((a, b) => a > b),
-        '>=': inequalityDistance((a, b) => a >= b),
-        '<': partialOrderDistance((a, b) => a < b),
-        '<=': inequalityDistance((a, b) => a <= b)
+        '>': totalOrderDistance((a, b) => a > b),
+        '>=': partialOrderDistance((a, b) => a >= b),
+        '<': totalOrderDistance((a, b) => a < b),
+        '<=': partialOrderDistance((a, b) => a <= b)
       },
       assignmentOperators: {
         '=': assignEqual,
@@ -74,9 +74,9 @@ module.exports = {
       comparisonOperators: {
         '==': equalityDistance,
         '!=': disequalityDistance,
-        '>': partialOrderDistance((a, b) => a > b),
-        '>=': inequalityDistance((a, b) => a >= b),
-        '<': inequalityDistance((a, b) => a < b),
+        '>': totalOrderDistance((a, b) => a > b),
+        '>=': partialOrderDistance((a, b) => a >= b),
+        '<': totalOrderDistance((a, b) => a < b),
         '<=': partialOrderDistance((a, b) => a <= b)
       },
       assignmentOperators: {
