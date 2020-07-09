@@ -22,6 +22,7 @@ const goal = {
 
 const eat = {
   id: 'eat',
+  name:'eat',
   description: '',
   cost: 1,
   conditions: [
@@ -48,6 +49,7 @@ const eat = {
 
 const goapmodel = {
   id: 'my-goap-model',
+  name:"My Goap model",
   description: 'Things and stuff',
   properties,
   transitions: [eat]
@@ -66,10 +68,10 @@ const initialState = {
   ]
 }
 
-console.debug(
-  JSON.stringify(
-    generatePlan({ model: goapmodel, initialState, goal }),
-    null,
-    2
-  )
-)
+// console.debug(
+//   JSON.stringify(
+//     {} //generatePlan({ model: goapmodel, initialState, goal }),
+//     null,
+//     2
+//   )
+// )

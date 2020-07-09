@@ -58,7 +58,8 @@
     "node-fetch": "^2.6.0",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
-    "schemaglue": "^4.0.4"
+    "schemaglue": "^4.0.4",
+    "uuid": "^8.2.0"
   },
   "devDependencies": {
     "@ava/babel": "^1.0.1",

@@ -1,9 +1,9 @@
 import { gql } from 'apollo-server-express'
-import { log, print } from 'io.maana.shared'
 
 import { SELF_ID } from '../../constants'
 import { generatePlanAsync } from './plan'
-import { Types } from './types/constants'
+import { logger, Types } from './types/constants'
+import { GoapModel } from './Types/GoapModel'
 
 require('dotenv').config()
 
@@ -51,6 +51,33 @@ export const resolver = {
     comparisonOperators: async (_, { propertyType }) =>
       Object.keys(
         (Types[propertyType] || { comparisonOperators: {} }).comparisonOperators
-      )
+      ),
+    createModel: async (_, input) => {
+      const x = new GoapModel(input).toGraphQL()
+      logger.info(JSON.stringify(x,null,2))
+      return x
+    },
+    addProperty: async (_,input) => {
+      const model = new GoapModel(input.model)
+      model.addProperty(input)
+      return model.toGraphQL()
+    },
+    addTransition: async (_,input) => {
+      const model = new GoapModel(input.model)
+      model.addTransition(input)
+      return model.toGraphQL()
+    },
+    addEffect: async (_,input) => {
+      const model = new GoapModel(input.model)
+      const transition = model.transitions[input.transitionName]
+      transition.addEffect({...input, properties:model.properties, modelId: model.id})
+      return model.toGraphQL()
+    },
+    addCondition: async (_,input) => {
+      const model = new GoapModel(input.model)
+      const transition = model.transitions[input.transitionName]
+      transition.addEffect({...input, properties:model.properties, modelId: model.id})
+      return model.toGraphQL()
+    }
   }
 }

@@ -13,17 +13,24 @@ const { Property } = require("./Types/Property")
 const { WorldState } = require("./Types/WorldState")
 const { Goal } = require("./Types/Goal")
 const { GoapModel } = require("./Types/GoapModel")
-const { Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('./types/constants');
+const { logger, Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('./types/constants');
+
+function throwErr(id, reason){
+  const msg = `Planning for ${id} failed.  ${reason}`
+  logger.error(msg)
+  throw new Error(msg)
+}
 
 
 function generatePlan( input ) {
+  logger.info(`Staring planning for ${input.model.id}`)
   const { model: goapmodel, initialState: init, goal: goalinput } = input 
   const model = new GoapModel(goapmodel)
   const {transitions, properties} = model
   const worldstate = new WorldState({...init, properties} )
   const goal = new Goal({ properties, conditions: goalinput.conditions })
-  const nonnullTransitions = transitions //.filter( x => x.action != null )
-  const initialDistance = distanceTo( properties, worldstate, goal )
+  const nonnullTransitions = Object.values(transitions)
+  const initialDistance = distanceTo(model.id, properties, worldstate, goal )
   let _id = 0
   const nextId = () => { _id++; return _id }
            
@@ -47,28 +54,30 @@ function generatePlan( input ) {
   var currentIteration = 0
   
   if( initialDistance < MIN_PROPERTY_DISTANCE ) { 
-    console.debug("The current world state coincides with the goal world state");
+    logger.warn("The current world state coincides with the goal world state");
     return mkActionPlan( model.id, startNode, worldstate, worldstate, closedNodes)
   }
   
 
   while( openNodes.length > 0 ) {
     currentIteration += 1
+    logger.info(`PLANNING ITERATION ${currentIteration} for ${model.id}`)
     //Check and update iterations count
     if ( currentIteration >= ITERATION_LIMIT ) 
-      throw new Error("Planning generations exceded max iteration")
+      throwErr(model.id, "Planning generations exceded max iteration")
     
     //Select the lowest cost node from the list of openNodes
     var currentNode = closeNode(openNodes, closedNodes);
     
     //Check if the resultant world state of the current node is the goal world state
-    if (distanceTo(properties, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
+    if (distanceTo(model.id, properties, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
+      logger.info(`Action plan for '${model.id} in ${currentIteration} iterations.'`)
       return mkActionPlan( model.id, currentNode, new WorldState({...init,properties}), worldstate, closedNodes)
     }
     
     //Iterate over all the the enabled transitions transitions
     const enabledTransitions = nonnullTransitions.filter( 
-      x => isEnabled(properties, x,currentNode.resultantState))
+      x => isEnabled(model.id, properties, x,currentNode.resultantState))
     for (let transition of enabledTransitions) {
       //Compute the effect of applying the transition to the currentNode's 
       //resultant worldstate
@@ -76,14 +85,14 @@ function generatePlan( input ) {
 
       //Check if there is an action in the open list that can also reach 
       //the new current world state
-      let inOpenNode = IsInOpenNodes(properties, openNodes, newState);
+      let inOpenNode = IsInOpenNodes(model.id, properties, openNodes, newState);
       if( inOpenNode != null ) {
         //In true case check if the new node is better
         //The old node is better than this new one
         if(currentNode.cost + transition.cost > inOpenNode.cost){
          continue
         } 
-        const dist = distanceTo(properties, newState, goal);
+        const dist = distanceTo(model.id, properties, newState, goal);
         //The new node is better than the old, lets update the node data
         inOpenNode.parentId = currentNode.id;
         inOpenNode.cost = currentNode.g + transition.cost;
@@ -94,7 +103,7 @@ function generatePlan( input ) {
         //Add the new node to the open list
         const newNode = new PlannerNode(
           currentNode.cost + transition.cost, 
-          distanceTo(properties, newState, goal), 
+          distanceTo(model.id, properties, newState, goal), 
           nextId(), 
           currentNode.id, 
           newState, 
@@ -105,6 +114,7 @@ function generatePlan( input ) {
     }
   } 
   //In no plan found case we return an empty plan 
+  logger.warn(`There is no action plan for '${model.id} for the given initial state and goal.'`)
   return null;
 }
 
@@ -141,10 +151,10 @@ function closeNode( openNodes, closedNodes ) { // PlannerNode_GS
 
 //Iterate all the open nodes and check if anyone has the target world 
 // state as resultant world state
-function IsInOpenNodes(properties, _open, target_worldstate) { // , out PlannerNode_GS found
+function IsInOpenNodes(modelId, properties, _open, target_worldstate) { // , out PlannerNode_GS found
   for (let [_,open_nodes] of _open.entries()) {
     for (let open_node of open_nodes) {
-      const dist = distanceTo(properties, open_node.resultantState, target_worldstate, true)
+      const dist = distanceTo(modelId, properties, open_node.resultantState, target_worldstate, true)
       if ( dist === 0) return open_node
       return null
     }
@@ -158,25 +168,30 @@ function TryGetValue( state, key, defaultValue ){
   return defaultValue
 }
 
-function isEnabled(properties, transition, state) {
-  for ( const condition of transition.conditions ) {
+function isEnabled(modelId, properties, transition, state) {
+  for ( const condition in transition.conditions ) {
     const currentProp = TryGetValue(state, condition.propertyName )
     if (!currentProp) {
-      console.log(state)
-      throw new Error(`Can't determine if transition ${transition.id} is enabled.  I refers to a property ${condition.propertyName} which cannot be found.`)
+      throwErr(modelId, `Can't determine if transition ${transition.id} is enabled.  I refers to a property ${condition.propertyName} which cannot be found.`)
     }
     
     const { weight } = properties[ condition.propertyName ]
     if (condition.argumentName && condition.argumentName !== "") {
       const arg = {...TryGetValue(state, condition.argumentName,new Binding({properties, propertyName:condition.argumentName})), operator: condition.operator || "=="}
       const dist = distanceToProperty( currentProp, arg, weight, true )
-      if (dist > MIN_PROPERTY_DISTANCE) return false
+      if (dist > MIN_PROPERTY_DISTANCE) {
+        logger.info(`Transition ${transition.id} is DISABLED`)
+        return false
+      }
     } else {
       const dist = distanceToProperty( currentProp, { ...condition, operator: condition.operator || "=="}, weight, true )
-      if (dist > MIN_PROPERTY_DISTANCE ) return false
+      if (dist > MIN_PROPERTY_DISTANCE ) {
+        logger.info(`Transition ${transition.id} is DISABLED`)
+        return false
+      }
     }
   }
-
+  logger.info(`Transition ${transition.id} is ENABLED`)
   return true
 }
 
@@ -198,7 +213,7 @@ function isEnabled(properties, transition, state) {
  * a list of conditions which all must be met.  Then the collection
  * is empty, then the goal is trivially satisfied.
 */
-function distanceTo( properties, source, target, no_weighting=false ){
+function distanceTo( modelId, properties, source, target, no_weighting=false ){
   let totalDistance = 0
   // Iterate over the conditions in the target state.
   // and compute the weighted sum of the distances between 
@@ -208,13 +223,13 @@ function distanceTo( properties, source, target, no_weighting=false ){
     // get the corresponding property from the current state
     const prop = TryGetValue( source, v.propertyName, new Binding({properties, propertyName: v.propertyName }) )
     if (prop == null) 
-      throw new Error('Cannot compute distance between worldstates.'
+      throwErr(modelId,'Cannot compute distance between worldstates.'
         +`The target world state uses variable ${v.propertyName} that is not defined`)
     const {weight} = properties[prop.propertyName]
     if (v.argumentName) {
       const temp = { ... TryGetValue( source, v.argumentName, new Binding({properties, propertyName: v.argumentName }) )}
       if (temp == null) 
-        throw new Error('Cannot compute distance between worldstates.'
+        throwErr(modelId, 'Cannot compute distance between worldstates.'
         +`The goal state uses variable ${v.argumentName} that is not defined`)
       const arg = { ...temp, operator: v.operator  }
       // compute the weighted distance between the source and 
@@ -279,7 +294,7 @@ function applyTransition(properties, transition, current) {
   //Allocate the new world state based in the current
   const newWorldState = new WorldState({...current,properties})
   // Apply each of the effects of the transition
-  for (let effect of transition.effects ) {
+  for (let effect in transition.effects ) {
     applyEffectToWorldstate(properties, newWorldState, effect)
   }
   return newWorldState

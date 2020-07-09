@@ -182,10 +182,12 @@ type Transition {
 
 input TransitionInput {
     id: ID
-    conditions: [ConditionInput!]!
+    name: String!
+    description: String
+    conditions: [ConditionInput]
     action: ID
-    effects: [ EffectInput! ]!
-    cost: Float!
+    effects: [ EffectInput ]
+    cost: Float
 }
 
 type WorldState {
@@ -220,8 +222,8 @@ input GoapModelInput {
     id: ID!
     name: String!
     description: String
-    properties: [ PropertyInput! ]!
-    transitions: [ TransitionInput! ]!
+    properties: [ PropertyInput ]
+    transitions: [ TransitionInput ]
 }
 
 type ActionPlan {
@@ -237,18 +239,39 @@ type ActionPlan {
 
 type Query {
     info: Info!
+
     """
     What types can be assigned to properties?
     """
     propertyTypes: [ID!]!
+
     """
     Given a type, what are the assignment operators that are defined for properties of that type?
     """
     assignmentOperators( propertyType: ID! ): [ID!]!
+
     """
     Given a type, what are the comparison operations that are defined for properties of that type?
     """
     comparisonOperators( propertyType: ID! ): [ID!]!
+
+    """ Given a name, and an optional description, list of properties (variables) 
+    and transitions, construct a GOAP model.  
+    """
+    createModel( id: ID, name: String!, description: String, properties: [ PropertyInput ], transitions: [ TransitionInput ]): GoapModel
+
+    """ add a property to a GOAP model.  If the property already exists in the model, it will be overwritten. """
+    addProperty( model: GoapModelInput!, name: String!, description: String, typeOf: ID!, weight: Float ): GoapModel!
+
+    """ add a transition to a GOAP model.  If the transition already exists in the model, it will be overwritten. """
+    addTransition( model: GoapModelInput!, name: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): GoapModel!
+    
+    """Add an effect to a transition of a GOAP model.  If the effect already exists in the model, this function will leave the model unchanged. """
+    addEffect( model: GoapModelInput!, transitionName: String!, propertyName:String!, operator:ID!, argument: PropertyOrValueInput! ): GoapModel!
+
+    """Add a condition to a transition of a GOAP model.  If the condition already exists in the model, this function will leave the model unchanged. """
+    addCondition( model: GoapModelInput!, transitionName: String!, propertyName:String!, operator:ID!, argument: PropertyOrValueInput! ): GoapModel!
+
     """
     Given a goap model, an intial state, and a collection of goal conditions, what is the least
     cost action plan that acheives that goal?
