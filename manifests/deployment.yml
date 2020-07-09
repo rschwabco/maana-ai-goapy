@@ -1,16 +1,24 @@
-apiVersion : apps/v1beta1
+apiVersion : apps/v1
 kind: Deployment
 metadata:
-  name: aigoaplogic 
+  name: ai-goap-logic 
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: ai-goap-logic 
   template:
     metadata:
       labels:
-        app: aigoaplogic 
+        app: ai-goap-logic 
     spec:
       containers:
-        - name: aigoaplogic 
-          image: services.azurecr.io/aigoaplogic
+        - name: ai-goap-logic
+          env:
+            - name: PORT
+              value: "#{PORT}#"
+            - name: SERVICE_ID
+              value: "#{SERVICE_ID}#" 
+          image: services.azurecr.io/ai-goap-logic
           ports:
           - containerPort: 8050
