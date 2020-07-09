@@ -1,9 +1,9 @@
 'use strict'
 const { generatePlan } = require('./plan')
-const { Worldstate } = require('./Types/WorldState')
+const { Worldstate } = require('./types/WorldState')
 const { Binding } = require('./types/Binding')
-const { Transition } = require('./Types/Transition')
-const { Property } = require('./Types/Property')
+const { Transition } = require('./types/Transition')
+const { Property } = require('./types/Property')
 
 const properties = [
   new Property({ name: 'hunger', typeOf: 'INT' }),

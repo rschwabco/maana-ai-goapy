@@ -9,10 +9,10 @@ const { PlannerNode } = require("./types/PlannerNode")
 const { Transition } = require("./types/Transition")
 const { Effect } = require("./types/Transition")
 const { Binding } = require("./types/Binding")
-const { Property } = require("./Types/Property")
-const { WorldState } = require("./Types/WorldState")
-const { Goal } = require("./Types/Goal")
-const { GoapModel } = require("./Types/GoapModel")
+const { Property } = require("./types/Property")
+const { WorldState } = require("./types/WorldState")
+const { Goal } = require("./types/Goal")
+const { GoapModel } = require("./types/GoapModel")
 const { logger, Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('./types/constants');
 
 function throwErr(id, reason){

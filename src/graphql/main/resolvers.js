@@ -3,7 +3,7 @@ import { gql } from 'apollo-server-express'
 import { SELF_ID } from '../../constants'
 import { generatePlanAsync } from './plan'
 import { logger, Types } from './types/constants'
-import { GoapModel } from './Types/GoapModel'
+import { GoapModel } from './types/GoapModel'
 
 require('dotenv').config()
 
