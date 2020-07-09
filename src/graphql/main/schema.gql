@@ -1,0 +1,281 @@
+type Info {
+    id: ID!
+    name: String!
+    description: String
+}
+
+"""
+A property represents an observable of the worldstate.  
+"""
+type Property {
+    """
+    A unique identifier for the property.  Identifiers should
+    be globally unique.   For Example, my-goap/velocity:Float
+    """
+    id: ID!
+    "A human readable identifier for the property."
+    name: String!
+    "An optional description of the property"
+    description: String
+    """
+    The type of scalar values that can be assigned to the property.
+    Must be one of: STRING, INT, BOOLEAN or FLOAT.
+    """
+    typeOf: String!
+    """
+    A weighting factor used to compute the weighted distance 
+    between two worldstates which contain this property.  
+    This factor can be used to prevent properties with very large
+    values from swamping the distance calculation.   If in doubt 
+    use a value of 1.0.
+    """
+    weight: Float!
+}
+
+input PropertyInput {
+  id: ID
+  name: String!
+  typeOf: String!
+  description: String
+  weight: Float
+}
+
+"""
+A 'union' type representing a scalar value that can be 
+assigned to a property.  Exactly one of the optional fields
+must be provided.
+"""
+type Value {
+    id: ID!
+    STRING: String
+    FLOAT: Float
+    INT: Int
+    BOOLEAN: Boolean
+}
+
+input ValueInput {
+    id: ID
+    STRING: String
+    FLOAT: Float
+    INT: Int
+    BOOLEAN: Boolean
+}
+
+"""
+A 'union' type representing a scalar value or property 
+that can occur on the right hand side of a effect or 
+constraint.
+"""
+type PropertyOrValue {
+    id: ID!
+    propertyName: String
+    STRING: String
+    FLOAT: Float
+    INT: Int
+    BOOLEAN: Boolean
+}
+
+input PropertyOrValueInput {
+    id: ID
+    propertyName: String 
+    STRING: String
+    FLOAT: Float 
+    INT: Int 
+    BOOLEAN: Boolean
+}
+
+"""
+A value bound to a property.
+"""
+type Binding {
+    id: ID!
+    propertyName: String! 
+    value: Value!
+}
+
+input BindingInput {
+    id: ID
+    propertyName: String!
+    value: ValueInput!
+}
+
+"""
+An effect is a reassignment of the value associated 
+with a property.   Depending on the type of the property, 
+reassignment may perform logical or arithmetic operations
+to combine the previous value with the provided argument.
+To be well formed, the property, operator and argument 
+must all have the same type.
+"""
+type Effect {
+    id: ID!
+    propertyName: String!
+    operator: String!
+    argument: PropertyOrValue!
+}
+
+input EffectInput {
+    id: ID
+    propertyName: String!
+    operator: String!
+    argument: PropertyOrValueInput!
+}
+
+"""
+A condition is a logical expression that must be satisfied
+in order for a transition to be enabled.   To be well formed
+the property, operator and argument must all have the same
+type.
+"""
+type Condition {
+    id: ID!
+    propertyName: String!
+    operator: String!
+    argument: PropertyOrValue!
+}
+
+input ConditionInput {
+    id: ID 
+    propertyName: String!
+    operator: String!
+    argument: PropertyOrValueInput!
+}
+
+"""
+A transition is a conditional behavior, which may occur
+whenever its all its conditions are satisfied by the 
+worldstate.   For the purpose of planning, firing the 
+transition is assumed to produce a number of effects which 
+modify the worldstate.   Optionally it may produce an 
+action, which will be returned as part of the optimal 
+action plan.
+"""
+type Transition {
+    "A globally unique identifier for the transaction"
+    id: ID!
+    "A human readable name for the transaction"
+    name: String!
+    "An optional description of the transaction"
+    description: String
+    """
+    A collection of conditions that must be satisfied by
+    the worldstate in order for the transaction to be 
+    enabled. 
+    """
+    conditions: [ Condition! ]!
+    """
+    The identifier for an action that should be added to 
+    the action plan as a result of the transaction firing.
+    """
+    action: ID
+    """
+    A collection of mutations to perform on the worldstate
+    properties whenever the transaction fires.
+    """
+    effects: [ Effect! ]!
+    """
+    The cost basis of the transaction used for planning 
+    purposes. 
+    """
+    cost: Float!
+}
+
+input TransitionInput {
+    id: ID
+    name: String!
+    description: String
+    conditions: [ConditionInput]
+    action: ID
+    effects: [ EffectInput ]
+    cost: Float
+}
+
+type WorldState {
+    id: ID!
+    bindings: [Binding!]!
+}
+
+input WorldStateInput {
+  id: ID
+  bindings: [BindingInput!]!
+}
+
+type Goal {
+    id: ID!
+    conditions: [Condition!]!
+}
+
+input GoalInput {
+  id: ID
+  conditions: [ConditionInput!]!
+}
+
+type GoapModel {
+   id: ID!
+   name: String!
+   description: String
+   properties: [ Property! ]!
+   transitions: [ Transition! ]!
+}
+
+input GoapModelInput {
+    id: ID!
+    name: String!
+    description: String
+    properties: [ PropertyInput ]
+    transitions: [ TransitionInput ]
+}
+
+type ActionPlan {
+    id: ID!
+    goapModelId: ID!
+    actions: [ ID! ]!
+    transitions: [ ID! ]!
+    totalSteps: Int!
+    totalCost: Float!
+    initialState: WorldState!
+    finalState: WorldState!
+}
+
+type Query {
+    info: Info!
+
+    """
+    What types can be assigned to properties?
+    """
+    propertyTypes: [ID!]!
+
+    """
+    Given a type, what are the assignment operators that are defined for properties of that type?
+    """
+    assignmentOperators( propertyType: ID! ): [ID!]!
+
+    """
+    Given a type, what are the comparison operations that are defined for properties of that type?
+    """
+    comparisonOperators( propertyType: ID! ): [ID!]!
+
+    """ Given a name, and an optional description, list of properties (variables) 
+    and transitions, construct a GOAP model.  
+    """
+    createModel( id: ID, name: String!, description: String, properties: [ PropertyInput ], transitions: [ TransitionInput ]): GoapModel
+
+    """ add a property to a GOAP model.  If the property already exists in the model, it will be overwritten. """
+    addProperty( model: GoapModelInput!, name: String!, description: String, typeOf: ID!, weight: Float ): GoapModel!
+
+    """ add a transition to a GOAP model.  If the transition already exists in the model, it will be overwritten. """
+    addTransition( model: GoapModelInput!, name: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): GoapModel!
+    
+    """Add an effect to a transition of a GOAP model.  If the effect already exists in the model, this function will leave the model unchanged. """
+    addEffect( model: GoapModelInput!, transitionName: String!, propertyName:String!, operator:ID!, argument: PropertyOrValueInput! ): GoapModel!
+
+    """Add a condition to a transition of a GOAP model.  If the condition already exists in the model, this function will leave the model unchanged. """
+    addCondition( model: GoapModelInput!, transitionName: String!, propertyName:String!, operator:ID!, argument: PropertyOrValueInput! ): GoapModel!
+
+    """
+    Given a goap model, an intial state, and a collection of goal conditions, what is the least
+    cost action plan that acheives that goal?
+    """
+    generateActionPlan( model: GoapModelInput!, initialState: WorldStateInput!, goal: GoalInput! ): ActionPlan!    
+}
+
