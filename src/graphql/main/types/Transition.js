@@ -7,22 +7,20 @@ class Transition {
     const {
       properties,
       id,
-      name,
       cost,
       description,
       conditions,
       effects,
       action
     } = input
-    if (!name || name === '') {
-      const msg = 'Cannot construct transaction.  The name is null or empty.'
+    if (!id || id === '') {
+      const msg = 'Cannot construct transaction.  The id is null or empty.'
       logger.error(msg)
       throw new Error(msg)
     }
     const cs = conditions || []
     const es = effects || []
     this.id = id
-    this.name = name
     this.conditions = {}
     this.effects = {}
     this.description = description

@@ -1,16 +1,24 @@
 const { Types } = require('./constants')
 
-const { Binding } = require('./Binding')
+const { PropertyValue } = require('./PropertyValue')
 class WorldState {
   constructor( input ){
     const properties = input.properties
-    const bs = input.bindings || input.conditions || input.properties || []
-    this.bindings = !Array.isArray(bs) ? bs : Object.fromEntries(
-        bs.map( x => [x.propertyName,new Binding({...x, properties})])
-    )
+    const bs = input.bindings || input.conditions || input.propertyValues || []
+    if (!Array.isArray(bs)) { 
+      for ( const b of Object.values(bs)) this[b.id] = new PropertyValue({...b, properties} )
+    } else {
+      for ( const b of bs) this[b.propertyId || b.id] = new PropertyValue({...b, properties})
+    }
   }
-  
-  get id() { return `{${Object.values(this.bindings).map(x=> x.id).join(',')}}`}
+
+  get id() {
+    return `${Object.values(this).map(x=> `${x.id}=${x.value}`).join(',')}}`
+  }
+
+  toGraphQL() {
+    return Object.values(this).map( x => x.toGraphQL() )
+  }
 }
 
 module.exports = {

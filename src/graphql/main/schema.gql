@@ -9,12 +9,9 @@ A property represents an observable of the worldstate.
 """
 type Property {
     """
-    A unique identifier for the property.  Identifiers should
-    be globally unique.   For Example, my-goap/velocity:Float
+    A unique identifier for the property.  
     """
     id: ID!
-    "A human readable identifier for the property."
-    name: String!
     "An optional description of the property"
     description: String
     """
@@ -34,7 +31,6 @@ type Property {
 
 input PropertyInput {
   id: ID
-  name: String!
   typeOf: String!
   description: String
   weight: Float
@@ -45,7 +41,7 @@ A 'union' type representing a scalar value that can be
 assigned to a property.  Exactly one of the optional fields
 must be provided.
 """
-type Value {
+type PropertyValue {
     id: ID!
     STRING: String
     FLOAT: Float
@@ -53,8 +49,8 @@ type Value {
     BOOLEAN: Boolean
 }
 
-input ValueInput {
-    id: ID
+input PropertyValueInput {
+    id: ID!
     STRING: String
     FLOAT: Float
     INT: Int
@@ -68,7 +64,7 @@ constraint.
 """
 type PropertyOrValue {
     id: ID!
-    propertyName: String
+    propertyId: ID
     STRING: String
     FLOAT: Float
     INT: Int
@@ -77,27 +73,13 @@ type PropertyOrValue {
 
 input PropertyOrValueInput {
     id: ID
-    propertyName: String 
+    propertyId: ID 
     STRING: String
     FLOAT: Float 
     INT: Int 
     BOOLEAN: Boolean
 }
 
-"""
-A value bound to a property.
-"""
-type Binding {
-    id: ID!
-    propertyName: String! 
-    value: Value!
-}
-
-input BindingInput {
-    id: ID
-    propertyName: String!
-    value: ValueInput!
-}
 
 """
 An effect is a reassignment of the value associated 
@@ -109,15 +91,15 @@ must all have the same type.
 """
 type Effect {
     id: ID!
-    propertyName: String!
-    operator: String!
+    propertyId: ID!
+    operator: ID!
     argument: PropertyOrValue!
 }
 
 input EffectInput {
     id: ID
-    propertyName: String!
-    operator: String!
+    propertyId: ID!
+    operator: ID!
     argument: PropertyOrValueInput!
 }
 
@@ -129,15 +111,15 @@ type.
 """
 type Condition {
     id: ID!
-    propertyName: String!
-    operator: String!
+    propertyId: ID!
+    operator: ID!
     argument: PropertyOrValue!
 }
 
 input ConditionInput {
     id: ID 
-    propertyName: String!
-    operator: String!
+    propertyId: ID!
+    operator: ID!
     argument: PropertyOrValueInput!
 }
 
@@ -153,8 +135,6 @@ action plan.
 type Transition {
     "A globally unique identifier for the transaction"
     id: ID!
-    "A human readable name for the transaction"
-    name: String!
     "An optional description of the transaction"
     description: String
     """
@@ -181,8 +161,7 @@ type Transition {
 }
 
 input TransitionInput {
-    id: ID
-    name: String!
+    id: ID!
     description: String
     conditions: [ConditionInput]
     action: ID
@@ -190,51 +169,14 @@ input TransitionInput {
     cost: Float
 }
 
-type WorldState {
-    id: ID!
-    bindings: [Binding!]!
-}
-
-input WorldStateInput {
-  id: ID
-  bindings: [BindingInput!]!
-}
-
-type Goal {
-    id: ID!
-    conditions: [Condition!]!
-}
-
-input GoalInput {
-  id: ID
-  conditions: [ConditionInput!]!
-}
-
-type GoapModel {
-   id: ID!
-   name: String!
-   description: String
-   properties: [ Property! ]!
-   transitions: [ Transition! ]!
-}
-
-input GoapModelInput {
-    id: ID!
-    name: String!
-    description: String
-    properties: [ PropertyInput ]
-    transitions: [ TransitionInput ]
-}
-
 type ActionPlan {
     id: ID!
-    goapModelId: ID!
     actions: [ ID! ]!
     transitions: [ ID! ]!
     totalSteps: Int!
     totalCost: Float!
-    initialState: WorldState!
-    finalState: WorldState!
+    initialState: [PropertyValue!]!
+    finalState: [PropertyValue!]!
 }
 
 type Query {
@@ -255,27 +197,22 @@ type Query {
     """
     comparisonOperators( propertyType: ID! ): [ID!]!
 
-    """ Given a name, and an optional description, list of properties (variables) 
-    and transitions, construct a GOAP model.  
-    """
-    createModel( id: ID, name: String!, description: String, properties: [ PropertyInput ], transitions: [ TransitionInput ]): GoapModel
+    """Smart constructor for a single property. """
+    createProperty( properties: [PropertyInput!]!, id: String!, description: String, typeOf: ID!, weight: Float ): Property!
 
-    """ add a property to a GOAP model.  If the property already exists in the model, it will be overwritten. """
-    addProperty( model: GoapModelInput!, name: String!, description: String, typeOf: ID!, weight: Float ): GoapModel!
-
-    """ add a transition to a GOAP model.  If the transition already exists in the model, it will be overwritten. """
-    addTransition( model: GoapModelInput!, name: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): GoapModel!
+    """Smart constructor for a single transition. """
+    createTransition( properties: [PropertyInput!]!, id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition!
     
-    """Add an effect to a transition of a GOAP model.  If the effect already exists in the model, this function will leave the model unchanged. """
-    addEffect( model: GoapModelInput!, transitionName: String!, propertyName:String!, operator:ID!, argument: PropertyOrValueInput! ): GoapModel!
+    """Smart constructor for an effect"""
+    createEffect( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Effect!
 
-    """Add a condition to a transition of a GOAP model.  If the condition already exists in the model, this function will leave the model unchanged. """
-    addCondition( model: GoapModelInput!, transitionName: String!, propertyName:String!, operator:ID!, argument: PropertyOrValueInput! ): GoapModel!
+    """Smart constructor for a single condition. """
+    createCondition( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Condition!
 
     """
-    Given a goap model, an intial state, and a collection of goal conditions, what is the least
+    Given a collection of properties and transitions, an intial state, and a collection of goal conditions, what is the least
     cost action plan that acheives that goal?
     """
-    generateActionPlan( model: GoapModelInput!, initialState: WorldStateInput!, goal: GoalInput! ): ActionPlan!    
+    generateActionPlan( properties: [PropertyInput!]!, transitions: [TransitionInput!]!, initialState: [PropertyValueInput!]!, goal: [ConditionInput!]! ): ActionPlan!    
 }
 

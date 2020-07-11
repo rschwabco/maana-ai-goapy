@@ -6,13 +6,12 @@
 // ===========================================================================*/
 var SortedArrayMap = require("collections/sorted-array-map");
 const { PlannerNode } = require("./types/PlannerNode")
-const { Transition } = require("./types/Transition")
-const { Effect } = require("./types/Transition")
-const { Binding } = require("./types/Binding")
-const { Property } = require("./types/Property")
+const { PropertyValue } = require("./types/PropertyValue")
 const { WorldState } = require("./types/WorldState")
 const { Goal } = require("./types/Goal")
 const { GoapModel } = require("./types/GoapModel")
+const { Condition } = require("./types/Condition")
+const { v4: uuid } = require("uuid")
 const { logger, Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('./types/constants');
 
 function throwErr(id, reason){
@@ -23,14 +22,17 @@ function throwErr(id, reason){
 
 
 function generatePlan( input ) {
-  logger.info(`Staring planning for ${input.model.id}`)
-  const { model: goapmodel, initialState: init, goal: goalinput } = input 
-  const model = new GoapModel(goapmodel)
-  const {transitions, properties} = model
-  const worldstate = new WorldState({...init, properties} )
-  const goal = new Goal({ properties, conditions: goalinput.conditions })
+  const planId = uuid()
+  logger.info(`Staring planning for ${planId}`)
+  const { properties:ps, transitions:ts, initialState: init, goal: goalinput } = input 
+  const model = new GoapModel({properties:ps, transitions:ts })
+  const {properties,transitions} = model
+  const initPropValues = init.map( x => new PropertyValue({...x, properties}))
+  const initialState = new WorldState({ propertyValues: initPropValues, properties})
+  const worldstate = new WorldState({ propertyValues: initPropValues, properties} )
+  const goal = new Goal({ properties, conditions: goalinput })
   const nonnullTransitions = Object.values(transitions)
-  const initialDistance = distanceTo(model.id, properties, worldstate, goal )
+  const initialDistance = distanceTo(planId, properties, worldstate, goal )
   let _id = 0
   const nextId = () => { _id++; return _id }
            
@@ -55,44 +57,44 @@ function generatePlan( input ) {
   
   if( initialDistance < MIN_PROPERTY_DISTANCE ) { 
     logger.warn("The current world state coincides with the goal world state");
-    return mkActionPlan( model.id, startNode, worldstate, worldstate, closedNodes)
+    return mkActionPlan( planId, startNode, worldstate, worldstate, closedNodes)
   }
   
 
   while( openNodes.length > 0 ) {
     currentIteration += 1
-    logger.info(`PLANNING ITERATION ${currentIteration} for ${model.id}`)
+    logger.info(`PLANNING ITERATION ${currentIteration} for ${planId}`)
     //Check and update iterations count
     if ( currentIteration >= ITERATION_LIMIT ) 
-      throwErr(model.id, "Planning generations exceded max iteration")
+      throwErr(planId, "Planning generations exceded max iteration")
     
     //Select the lowest cost node from the list of openNodes
     var currentNode = closeNode(openNodes, closedNodes);
     
     //Check if the resultant world state of the current node is the goal world state
-    if (distanceTo(model.id, properties, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
-      logger.info(`Action plan for '${model.id} in ${currentIteration} iterations.'`)
-      return mkActionPlan( model.id, currentNode, new WorldState({...init,properties}), worldstate, closedNodes)
+    if (distanceTo(planId, properties, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
+      logger.info(`Action plan for '${planId} completed in ${currentIteration} iterations.'`)
+      return mkActionPlan( planId, currentNode, initialState, currentNode.resultantState, closedNodes)
     }
     
     //Iterate over all the the enabled transitions transitions
     const enabledTransitions = nonnullTransitions.filter( 
-      x => isEnabled(model.id, properties, x,currentNode.resultantState))
+      x => isEnabled(planId, properties, x,currentNode.resultantState))
     for (let transition of enabledTransitions) {
       //Compute the effect of applying the transition to the currentNode's 
       //resultant worldstate
-      const newState = applyTransition(properties, transition, currentNode.resultantState);
 
+      const newState = applyTransition(properties, transition, currentNode.resultantState);
       //Check if there is an action in the open list that can also reach 
       //the new current world state
-      let inOpenNode = IsInOpenNodes(model.id, properties, openNodes, newState);
+      let inOpenNode = IsInOpenNodes(planId, properties, openNodes, newState);
       if( inOpenNode != null ) {
         //In true case check if the new node is better
         //The old node is better than this new one
         if(currentNode.cost + transition.cost > inOpenNode.cost){
          continue
         } 
-        const dist = distanceTo(model.id, properties, newState, goal);
+        const dist = distanceTo(planId, properties, newState, goal);
         //The new node is better than the old, lets update the node data
         inOpenNode.parentId = currentNode.id;
         inOpenNode.cost = currentNode.g + transition.cost;
@@ -103,7 +105,7 @@ function generatePlan( input ) {
         //Add the new node to the open list
         const newNode = new PlannerNode(
           currentNode.cost + transition.cost, 
-          distanceTo(model.id, properties, newState, goal), 
+          distanceTo(planId, properties, newState, goal), 
           nextId(), 
           currentNode.id, 
           newState, 
@@ -114,7 +116,7 @@ function generatePlan( input ) {
     }
   } 
   //In no plan found case we return an empty plan 
-  logger.warn(`There is no action plan for '${model.id} for the given initial state and goal.'`)
+  logger.warn(`There is no action plan for '${planId} for the given initial state and goal.'`)
   return null;
 }
 
@@ -162,22 +164,22 @@ function IsInOpenNodes(modelId, properties, _open, target_worldstate) { // , out
 }
 
 function TryGetValue( state, key, defaultValue ){
-  const existingValue = state.bindings[key]
+  const existingValue = state[key]
   if (existingValue) return existingValue
-  if (defaultValue && key) state.bindings[key] = defaultValue
+  if (defaultValue && key) state[key] = defaultValue
   return defaultValue
 }
 
 function isEnabled(modelId, properties, transition, state) {
-  for ( const condition in transition.conditions ) {
-    const currentProp = TryGetValue(state, condition.propertyName )
+  for ( const condition of Object.values(transition.conditions) ) {
+    const currentProp = TryGetValue(state, condition.propertyId )
     if (!currentProp) {
-      throwErr(modelId, `Can't determine if transition ${transition.id} is enabled.  I refers to a property ${condition.propertyName} which cannot be found.`)
+      throwErr(modelId, `Can't determine if transition '${transition.id}' is enabled.  I refers to a property ${condition.propertyId} which cannot be found.`)
     }
     
-    const { weight } = properties[ condition.propertyName ]
-    if (condition.argumentName && condition.argumentName !== "") {
-      const arg = {...TryGetValue(state, condition.argumentName,new Binding({properties, propertyName:condition.argumentName})), operator: condition.operator || "=="}
+    const { weight } = properties[ condition.propertyId ]
+    if (condition.argumentId && condition.argumentId !== "") {
+      const arg = {...TryGetValue(state, condition.argumentId,new PropertyValue({properties, id:condition.argumentId})), operator: condition.operator || "=="}
       const dist = distanceToProperty( currentProp, arg, weight, true )
       if (dist > MIN_PROPERTY_DISTANCE) {
         logger.info(`Transition ${transition.id} is DISABLED`)
@@ -218,19 +220,28 @@ function distanceTo( modelId, properties, source, target, no_weighting=false ){
   // Iterate over the conditions in the target state.
   // and compute the weighted sum of the distances between 
   // the corresponding properties in the source and target
-  // worldstates.   
-  for (const [k,v] of Object.entries(target.conditions || target.bindings)) {
+  // worldstates.
+  const makeArg = x => {
+    const obj = {}
+    obj[x.typeOf] = x.Value
+    return obj
+  }
+  const objs = target.constructor.name === "Goal"
+    ? Object.values(target.conditions)
+    : Object.values(target).map( x => new Condition({properties, propertyId: x.id, operator:"==", argument: makeArg(x) }))
+  console.log(objs)  
+  for (const v of objs) {
     // get the corresponding property from the current state
-    const prop = TryGetValue( source, v.propertyName, new Binding({properties, propertyName: v.propertyName }) )
+    const prop = TryGetValue( source, v.propertyId, new PropertyValue({properties, id: v.propertyId }) )
     if (prop == null) 
       throwErr(modelId,'Cannot compute distance between worldstates.'
-        +`The target world state uses variable ${v.propertyName} that is not defined`)
-    const {weight} = properties[prop.propertyName]
-    if (v.argumentName) {
-      const temp = { ... TryGetValue( source, v.argumentName, new Binding({properties, propertyName: v.argumentName }) )}
+        +`The target world state uses variable ${v.propertyId} that is not defined`)
+    const {weight} = properties[prop.id]
+    if (v.argumentId) {
+      const temp = { ... TryGetValue( source, v.argumentId, new PropertyValue({properties, id: v.argumentId }) )}
       if (temp == null) 
         throwErr(modelId, 'Cannot compute distance between worldstates.'
-        +`The goal state uses variable ${v.argumentName} that is not defined`)
+        +`The goal state uses variable ${v.argumentId} that is not defined`)
       const arg = { ...temp, operator: v.operator  }
       // compute the weighted distance between the source and 
       // target properties and add it to the sum
@@ -273,7 +284,7 @@ function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=fals
   const typeDef = Types[lhsType]
   if (typeDef == null) throw new Error(`Unsupported type ${lhsType} in distanceToProperty function`)
   const distance = typeDef.comparisonOperators[operator]
-  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not supported for ${lhsProperty.propertyName}: ${lhsType}.` ) 
+  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not supported for ${lhsProperty.propertyId}: ${lhsType}.` ) 
   // compute and return the weighted distance
   const wt = no_weighting ? 1.0 : weight
   const d = distance(lhsValue, rhsValue) * wt
@@ -292,12 +303,13 @@ function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=fals
  */
 function applyTransition(properties, transition, current) {
   //Allocate the new world state based in the current
-  const newWorldState = new WorldState({...current,properties})
+  const newWorldState = new WorldState({ propertyValues: current,properties})
   // Apply each of the effects of the transition
-  for (let effect in transition.effects ) {
+  for (let effect of Object.values(transition.effects) ) {
     applyEffectToWorldstate(properties, newWorldState, effect)
   }
   return newWorldState
+  
 }
 
 /** Given a worldstate and an effect, mutate the worldsate
@@ -307,11 +319,9 @@ function applyTransition(properties, transition, current) {
  * @returns null (mutates the worldstate)
  */
 function applyEffectToWorldstate( properties, worldstate, effect ) {
-  let {propertyName, argumentName, typeOf } = effect
-  let variable = TryGetValue( worldstate, propertyName, new Binding({properties, propertyName} /* use default value */) )
-  let obj = { }
-  obj[typeOf] = effect.value
-  let rhs = TryGetValue( worldstate, argumentName, new Binding({properties, propertyName ,typeOf,value:obj}))
+  let {propertyId, argumentId, typeOf } = effect
+  let variable = TryGetValue( worldstate, propertyId, new PropertyValue({properties, id:propertyId} /* use default value */) )
+  let rhs = TryGetValue( worldstate, argumentId, new PropertyValue({properties, id:propertyId ,typeOf,value:effect.value}))
   ApplyPropertyEffect( variable, effect.operator, rhs )
 }
 
@@ -342,38 +352,14 @@ function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNod
       firingSequence.push(currentNode.action.id)
     }
   } 
-  const makeValue = (value, typeOf) => {
-    const obj = {id: `${value}:${typeOf}`}
-    obj[typeOf] = value
-    return obj
-  }
   return {
-    id: `${modelId}/${initialState.id}/solution`,
-    goapModelId: modelId,
+    id: `${modelId}`,
     totalCost,
     totalSteps: firingSequence.length,
     transitions: firingSequence,
     actions,
-    initialState:{
-      id: initialState.id,
-      bindings: Object.values(initialState.bindings).map( 
-        ({id, propertyName, typeOf, value}) => ({
-          id, 
-          propertyName, 
-          value: makeValue(value, typeOf)
-        })
-      )
-    } ,
-    finalState: { 
-      id: worldstate.id,
-      bindings: Object.values(worldstate.bindings).map( 
-        ({id, propertyName, typeOf, value}) => ({
-          id, 
-          propertyName, 
-          value: makeValue(value, typeOf)
-        })
-      )
-    }
+    initialState: initialState.toGraphQL(),
+    finalState: worldstate.toGraphQL()
   }
 }
 

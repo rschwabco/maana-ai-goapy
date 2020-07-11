@@ -7,12 +7,12 @@ class Effect {
       logger.error(msg)
       throw new Error(msg)
     }
-    const { properties, propertyName, operator, argument } = input
+    const { properties, propertyId, operator, argument } = input
     if (!argument) {
       throwErr('No argument was provided')
     }
-    if (!propertyName || propertyName === '') {
-      throwErr('Property name is null or empty')
+    if (!propertyId || propertyId === '') {
+      throwErr('Property id is null or empty')
     }
     if (!operator || operator === '') {
       throwErr('Operator is null or empty')
@@ -28,22 +28,22 @@ class Effect {
         'The argument must include exactly one property name or literal value'
       )
     }
-    const property = properties[propertyName]
+    const property = properties[propertyId]
     if (!property) {
-      throwErr(`The "${propertyName}" property does not exist.`)
+      throwErr(`The "${propertyId}" property does not exist.`)
     }
     if (!Types[property.typeOf].assignmentOperators[operator]) {
       throwErr(
         `The ${operator} operator is not supported for the ${property.typeOf} type.`
       )
     }
-    if (argument.propertyName != null && argument.propertyName !== '') {
-      const arg = properties[argument.propertyName]
+    if (argument.propertyId != null && argument.propertyId !== '') {
+      const arg = properties[argument.propertyId]
       if (!arg) {
-        throwErr(`The "${argument.propertyName}" property does not exist.`)
+        throwErr(`The "${argument.propertyId}" property does not exist.`)
       }
       if (arg.typeOf !== property.typeOf) {
-        throwErr(`"${propertyName}" and "${arg.name} have different types.`)
+        throwErr(`"${propertyId}" and "${arg.name} have different types.`)
       }
       this.argumentName = arg.name
     } else {
@@ -52,20 +52,20 @@ class Effect {
       }
       if (keys[0] !== property.typeOf) {
         throwErr(
-          `"${propertyName}" and "${argument[keys[0]]}" have different types.`
+          `"${propertyId}" and "${argument[keys[0]]}" have different types.`
         )
       }
       this.value = argument[keys[0]]
     }
     this.typeOf = property.typeOf
-    this.propertyName = propertyName
+    this.propertyId = propertyId
     this.operator = operator
     logger.info(`created effect ${this.id}`)
   }
 
   toGraphQL() {
     const lit = () => {
-      const obj = { id: `${this.value}:${this.typeOf}` }
+      const obj = { id: `${this.value}` }
       obj[this.typeOf] = this.value
       return obj
     }
@@ -73,19 +73,19 @@ class Effect {
       this.argumentName && this.argumentName !== null
         ? {
             id: `${this.argumentName}:${this.typeOf}`,
-            propertyName: this.argumentName
+            propertyId: this.argumentName
           }
         : lit()
     return {
       id: this.id,
-      propertyName: this.propertyName,
+      propertyId: this.propertyId,
       operator: this.operator,
       argument
     }
   }
 
   get id() {
-    return `${this.propertyName}:${this.typeOf}${this.operator}${this.argumentName ? this.argumentName : this.value}`
+    return `${this.propertyId}${this.operator}${this.argumentName ? this.argumentName : this.value}`
   }
 }
 

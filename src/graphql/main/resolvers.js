@@ -4,6 +4,11 @@ import { SELF_ID } from '../../constants'
 import { generatePlanAsync } from './plan'
 import { logger, Types } from './types/constants'
 import { GoapModel } from './types/GoapModel'
+import { Property } from './types/Property'
+import { Transition } from './types/Transition'
+import { Effect } from './types/Effect'
+import { Condition } from './types/Condition'
+
 
 require('dotenv').config()
 
@@ -52,32 +57,21 @@ export const resolver = {
       Object.keys(
         (Types[propertyType] || { comparisonOperators: {} }).comparisonOperators
       ),
-    createModel: async (_, input) => {
-      const x = new GoapModel(input).toGraphQL()
-      logger.info(JSON.stringify(x,null,2))
-      return x
+    createProperty: async (_,input) => {
+      const model = new GoapModel( input )
+      return new Property({...input, properties: model.properties }).toGraphQL()
     },
-    addProperty: async (_,input) => {
-      const model = new GoapModel(input.model)
-      model.addProperty(input)
-      return model.toGraphQL()
+    createTransition: async (_,input) => {
+      const model = new GoapModel( input )
+      return new Transition({...input, properties: model.properties }).toGraphQL()
     },
-    addTransition: async (_,input) => {
-      const model = new GoapModel(input.model)
-      model.addTransition(input)
-      return model.toGraphQL()
+    createEffect: async (_,input) => {
+      const model = new GoapModel( input )
+      return new Effect({...input, properties: model.properties }).toGraphQL()
     },
-    addEffect: async (_,input) => {
-      const model = new GoapModel(input.model)
-      const transition = model.transitions[input.transitionName]
-      transition.addEffect({...input, properties:model.properties, modelId: model.id})
-      return model.toGraphQL()
-    },
-    addCondition: async (_,input) => {
-      const model = new GoapModel(input.model)
-      const transition = model.transitions[input.transitionName]
-      transition.addEffect({...input, properties:model.properties, modelId: model.id})
-      return model.toGraphQL()
+    createCondition: async (_,input) => {
+      const model = new GoapModel( input )
+      return new Condition({...input, properties: model.properties }).toGraphQL()
     }
   }
 }
