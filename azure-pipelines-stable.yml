@@ -3,7 +3,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-- dev
+- master
 
 resources:
 - repo: self
@@ -53,7 +53,7 @@ stages:
     displayName: Deploy
     pool:
       vmImage: $(vmImageName)
-    environment: $(enviornmentName)
+    environment: 'Stable.default'
     strategy:
       runOnce:
         deploy:
