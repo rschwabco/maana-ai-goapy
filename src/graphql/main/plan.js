@@ -229,7 +229,6 @@ function distanceTo( modelId, properties, source, target, no_weighting=false ){
   const objs = target.constructor.name === "Goal"
     ? Object.values(target.conditions)
     : Object.values(target).map( x => new Condition({properties, propertyId: x.id, operator:"==", argument: makeArg(x) }))
-  console.log(objs)  
   for (const v of objs) {
     // get the corresponding property from the current state
     const prop = TryGetValue( source, v.propertyId, new PropertyValue({properties, id: v.propertyId }) )
