@@ -43,7 +43,7 @@ module.exports = {
       assignmentOperators: {
         '=': assignEqual,
         '&=': assignOp((x, y) => x && y),
-        '^=': assignOp((x, y) => x ? !y : y),
+        '^=': assignOp((x, y) => (x && !y) || (y && !x)),
         '|=': assignOp((x, y) => x || y),
       },
     },

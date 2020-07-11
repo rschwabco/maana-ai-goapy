@@ -6,71 +6,70 @@ const { Transition } = require('./types/Transition')
 const { Property } = require('./types/Property')
 
 const properties = [
-  new Property({ name: 'hunger', typeOf: 'INT' }),
-  new Property({ name: 'tired', typeOf: 'INT' })
+  new Property({ id: 'hunger', typeOf: 'INT' }),
+  new Property({ id: 'tired', typeOf: 'INT' }),
+  new Property({ id: 'toggle', typeOf: 'BOOLEAN' })
 ]
 
-const goal = {
-  conditions: [
-    {
-      propertyName: 'hunger',
-      operator: '<',
-      argument: { id: '1:INT', propertyName: 'tired' }
-    }
-  ]
-}
+const goal = [
+  {
+    propertyId: 'hunger',
+    operator: '<',
+    argument: { propertyId: 'tired' }
+  }
+]
 
 const eat = {
   id: 'eat',
-  name:'eat',
   description: '',
   cost: 1,
   conditions: [
     {
-      propertyName: 'hunger',
+      propertyId: 'hunger',
       operator: '>=',
-      argument: { id: '0:INT', propertyName: 'tired' }
+      argument: { id: '0:INT', propertyId: 'tired' }
     }
   ],
   action: 'EAT',
   effects: [
     {
-      propertyName: 'hunger',
+      propertyId: 'hunger',
       operator: '-=',
       argument: { id: '1:INT', INT: 1 }
     },
     {
-      propertyName: 'tired',
+      propertyId: 'tired',
       operator: '+=',
       argument: { id: '0.5:FLOAT', INT: 1 }
-    }
-  ]
-}
-
-const goapmodel = {
-  id: 'my-goap-model',
-  name:"My Goap model",
-  description: 'Things and stuff',
-  properties,
-  transitions: [eat]
-}
-
-const initialState = {
-  bindings: [
-    {
-      propertyName: 'hunger',
-      value: { id: '5:INT', INT: 5 }
     },
     {
-      propertyName: 'tired',
-      value: { id: '0:INT', INT: 0 }
+      propertyId: 'toggle',
+      operator: '^=',
+      argument: { BOOLEAN: true }
     }
   ]
 }
+
+const transitions = [eat]
+
+const initialState = [
+  {
+    id: 'hunger',
+    INT: 5
+  },
+  {
+    id: 'tired',
+    INT: 0
+  },
+  {
+    id: 'toggle',
+    BOOLEAN: true
+  }
+]
 
 // console.debug(
 //   JSON.stringify(
-//     {} //generatePlan({ model: goapmodel, initialState, goal }),
+//     generatePlan({ properties, transitions, initialState, goal }),
 //     null,
 //     2
 //   )
