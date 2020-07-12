@@ -14,7 +14,7 @@ const properties = [
 const goal = [
   {
     propertyId: 'hunger',
-    operator: '<',
+    comparisonOperator: '<',
     argument: { propertyId: 'tired' }
   }
 ]
@@ -26,7 +26,7 @@ const eat = {
   conditions: [
     {
       propertyId: 'hunger',
-      operator: '>=',
+      comparisonOperator: '>=',
       argument: { id: '0:INT', propertyId: 'tired' }
     }
   ],
@@ -34,17 +34,17 @@ const eat = {
   effects: [
     {
       propertyId: 'hunger',
-      operator: '-=',
+      assignmentOperator: '-=',
       argument: { id: '1:INT', INT: 1 }
     },
     {
       propertyId: 'tired',
-      operator: '+=',
+      assignmentOperator: '+=',
       argument: { id: '0.5:FLOAT', INT: 1 }
     },
     {
       propertyId: 'toggle',
-      operator: '^=',
+      assignmentOperator: '^=',
       argument: { BOOLEAN: true }
     }
   ]
@@ -67,10 +67,10 @@ const initialState = [
   }
 ]
 
-// console.debug(
-//   JSON.stringify(
-//     generatePlan({ properties, transitions, initialState, goal }),
-//     null,
-//     2
-//   )
-// )
+console.debug(
+   JSON.stringify(
+     generatePlan({ properties, transitions, initialState, goal }),
+     null,
+     2
+   )
+ )
