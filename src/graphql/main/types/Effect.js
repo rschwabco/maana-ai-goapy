@@ -7,15 +7,15 @@ class Effect {
       logger.error(msg)
       throw new Error(msg)
     }
-    const { properties, propertyId, operator, argument } = input
+    const { properties, propertyId, assignmentOperator, argument } = input
     if (!argument) {
       throwErr('No argument was provided')
     }
     if (!propertyId || propertyId === '') {
       throwErr('Property id is null or empty')
     }
-    if (!operator || operator === '') {
-      throwErr('Operator is null or empty')
+    if (!assignmentOperator || assignmentOperator === '') {
+      throwErr('assignmentOperator is null or empty')
     }
     const keys = Object.keys(argument).filter(x => x !== 'id')
     if (keys.length === 0) {
@@ -32,9 +32,9 @@ class Effect {
     if (!property) {
       throwErr(`The "${propertyId}" property does not exist.`)
     }
-    if (!Types[property.typeOf].assignmentOperators[operator]) {
+    if (!Types[property.typeOf].assignmentOperators[assignmentOperator]) {
       throwErr(
-        `The ${operator} operator is not supported for the ${property.typeOf} type.`
+        `The ${assignmentOperator} assignmentOperator is not supported for the ${property.typeOf} type.`
       )
     }
     if (argument.propertyId != null && argument.propertyId !== '') {
@@ -59,7 +59,7 @@ class Effect {
     }
     this.typeOf = property.typeOf
     this.propertyId = propertyId
-    this.operator = operator
+    this.assignmentOperator = assignmentOperator
     logger.info(`created effect ${this.id}`)
   }
 
@@ -79,13 +79,13 @@ class Effect {
     return {
       id: this.id,
       propertyId: this.propertyId,
-      operator: this.operator,
+      assignmentOperator: this.assignmentOperator,
       argument
     }
   }
 
   get id() {
-    return `${this.propertyId}${this.operator}${this.argumentName ? this.argumentName : this.value}`
+    return `${this.propertyId}${this.assignmentOperator}${this.argumentName ? this.argumentName : this.value}`
   }
 }
 

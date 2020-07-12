@@ -92,14 +92,14 @@ must all have the same type.
 type Effect {
     id: ID!
     propertyId: ID!
-    operator: ID!
+    assignmentOperator: ID!
     argument: PropertyOrValue!
 }
 
 input EffectInput {
     id: ID
     propertyId: ID!
-    operator: ID!
+    assignmentOperator: ID!
     argument: PropertyOrValueInput!
 }
 
@@ -112,14 +112,14 @@ type.
 type Condition {
     id: ID!
     propertyId: ID!
-    operator: ID!
+    comparisonOperator: ID!
     argument: PropertyOrValue!
 }
 
 input ConditionInput {
     id: ID 
     propertyId: ID!
-    operator: ID!
+    comparisonOperator: ID!
     argument: PropertyOrValueInput!
 }
 

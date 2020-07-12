@@ -32,9 +32,8 @@ class Transition {
 
   toGraphQL() {
     const json = { ...this }
-    console.log(Object.keys)
-    json.conditions = Object.values(this.conditions).map(x => x.toGraphQL())
-    json.effects = Object.values(this.effects).map(x => x.toGraphQL())
+    json.conditions = Object.values(this.conditions).map(x => x.toGraphQL()) 
+    json.effects = Object.values(this.effects).map(x => x.toGraphQL()) 
     logger.info(`Created transition ${this.id}`)
     return json
   }

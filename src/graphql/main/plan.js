@@ -179,14 +179,14 @@ function isEnabled(modelId, properties, transition, state) {
     
     const { weight } = properties[ condition.propertyId ]
     if (condition.argumentId && condition.argumentId !== "") {
-      const arg = {...TryGetValue(state, condition.argumentId,new PropertyValue({properties, id:condition.argumentId})), operator: condition.operator || "=="}
+      const arg = {...TryGetValue(state, condition.argumentId,new PropertyValue({properties, id:condition.argumentId})), comparisonOperator: condition.comparisonOperator || "=="}
       const dist = distanceToProperty( currentProp, arg, weight, true )
       if (dist > MIN_PROPERTY_DISTANCE) {
         logger.info(`Transition ${transition.id} is DISABLED`)
         return false
       }
     } else {
-      const dist = distanceToProperty( currentProp, { ...condition, operator: condition.operator || "=="}, weight, true )
+      const dist = distanceToProperty( currentProp, { ...condition, comparisonOperator: condition.comparisonOperator || "=="}, weight, true )
       if (dist > MIN_PROPERTY_DISTANCE ) {
         logger.info(`Transition ${transition.id} is DISABLED`)
         return false
@@ -228,7 +228,7 @@ function distanceTo( modelId, properties, source, target, no_weighting=false ){
   }
   const objs = target.constructor.name === "Goal"
     ? Object.values(target.conditions)
-    : Object.values(target).map( x => new Condition({properties, propertyId: x.id, operator:"==", argument: makeArg(x) }))
+    : Object.values(target).map( x => new Condition({properties, propertyId: x.id, comparisonOperator:"==", argument: makeArg(x) }))
   for (const v of objs) {
     // get the corresponding property from the current state
     const prop = TryGetValue( source, v.propertyId, new PropertyValue({properties, id: v.propertyId }) )
@@ -241,7 +241,7 @@ function distanceTo( modelId, properties, source, target, no_weighting=false ){
       if (temp == null) 
         throwErr(modelId, 'Cannot compute distance between worldstates.'
         +`The goal state uses variable ${v.argumentId} that is not defined`)
-      const arg = { ...temp, operator: v.operator  }
+      const arg = { ...temp, comparisonOperator: v.comparisonOperator  }
       // compute the weighted distance between the source and 
       // target properties and add it to the sum
       totalDistance += distanceToProperty(prop, arg, weight, no_weighting)
@@ -273,7 +273,7 @@ function distanceTo( modelId, properties, source, target, no_weighting=false ){
 function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=false){
   // deconstruct the input to get the individual properties.
   const { typeOf: lhsType, value: lhsValue } = lhsProperty
-  const { typeOf: rhsType, operator:op, value: rhsValue } = rhsProperty
+  const { typeOf: rhsType, comparisonOperator:op, value: rhsValue } = rhsProperty
   const operator = op || "=="
   // If the types are incompatible, then throw an error.  In the future
   // we might consider upcasting (e.g. Int to Float) when possible.
@@ -321,7 +321,7 @@ function applyEffectToWorldstate( properties, worldstate, effect ) {
   let {propertyId, argumentId, typeOf } = effect
   let variable = TryGetValue( worldstate, propertyId, new PropertyValue({properties, id:propertyId} /* use default value */) )
   let rhs = TryGetValue( worldstate, argumentId, new PropertyValue({properties, id:propertyId ,typeOf,value:effect.value}))
-  ApplyPropertyEffect( variable, effect.operator, rhs )
+  ApplyPropertyEffect( variable, effect.assignmentOperator, rhs )
 }
 
 
