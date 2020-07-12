@@ -67,10 +67,10 @@ const initialState = [
   }
 ]
 
-console.debug(
-   JSON.stringify(
-     generatePlan({ properties, transitions, initialState, goal }),
-     null,
-     2
-   )
- )
+// console.debug(
+//    JSON.stringify(
+//      generatePlan({ properties, transitions, initialState, goal }),
+//      null,
+//      2
+//    )
+//  )
