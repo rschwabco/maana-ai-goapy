@@ -350,8 +350,8 @@ function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNod
     //Check if the node has an action assigned.  If it is, add it 
     // to the action plan
     if (currentNode.action != null) {
-      actions.push(currentNode.action.action);
-      firingSequence.push(currentNode.action.id)
+      actions.unshift(currentNode.action.action);
+      firingSequence.unshift(currentNode.action.id)
     }
   } 
   return {
