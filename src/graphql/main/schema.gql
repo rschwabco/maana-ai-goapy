@@ -197,17 +197,26 @@ type Query {
     """
     comparisonOperators( propertyType: ID! ): [ID!]!
 
-    """Smart constructor for a single property. """
-    createProperty( properties: [PropertyInput!]!, id: String!, description: String, typeOf: ID!, weight: Float ): Property!
+    """Smart constructor for a single property.   Will return a value only if it is well formed."""
+    createProperty( properties: [PropertyInput!]!, id: String!, description: String, typeOf: ID!, weight: Float ): Property
 
-    """Smart constructor for a single transition. """
-    createTransition( properties: [PropertyInput!]!, id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition!
+    """Smart constructor for a single transition.   Will return a value only if it is well formed."""
+    createTransition( properties: [PropertyInput!]!, id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition
     
-    """Smart constructor for an effect"""
-    createEffect( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Effect!
+    """Smart constructor for an effect.   Will return a value only if it is well formed."""
+    createEffect( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Effect
 
-    """Smart constructor for a single condition. """
-    createCondition( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Condition!
+    """Smart constructor for a single condition.   Will return a value only if it is well formed."""
+    createCondition( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Condition
+
+    """Smart constructor for a property value.  Will return a value only if it is well formed."""
+    createPropertyValue( properties:[PropertyInput!]!, id: String!, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): PropertyValue
+
+    """Smart constructor for a property or value.  Will return a value only if it is well formed."""
+    createPropertyOrValue( properties:[PropertyInput!]!, id: String!, propertyId: ID, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): PropertyOrValue
+
+    """Smart constructor initial values.   Will verify each of the provided property values, remove invalid values, and create default values for any missing properties. """
+    createInitialValues( properties:[PropertyInput!]!, propertyValues:[PropertyValueInput]):[PropertyValue!]!
 
     """
     Given a collection of properties and transitions, an intial state, and a collection of goal conditions, what is the least

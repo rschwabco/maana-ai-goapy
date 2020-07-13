@@ -6,7 +6,7 @@ function assignEqual(prop, value) {
 }
 
 const MIN_PROPERTY_DISTANCE = 0.00001
-const ITERATION_LIMIT = 100000
+const ITERATION_LIMIT = 10000
 const logger = log(process.env.SERVICE_ID || 'maana-service')
 
 function equalityDistance(lhs, rhs) { return lhs === rhs ? 0.0 : 1.0 }

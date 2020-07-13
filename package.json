@@ -47,6 +47,7 @@
     "chalk": "^3.0.0",
     "collections": "^5.1.11",
     "cors": "^2.8.5",
+    "delay": "^4.3.0",
     "dotenv": "^8.2.0",
     "esm": "^3.2.25",
     "express": "^4.17.1",
@@ -59,7 +60,8 @@
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
     "schemaglue": "^4.0.4",
-    "uuid": "^8.2.0"
+    "uuid": "^8.2.0",
+    "worker-farm": "^1.7.0"
   },
   "devDependencies": {
     "@ava/babel": "^1.0.1",

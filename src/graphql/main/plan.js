@@ -79,7 +79,7 @@ function generatePlan( input ) {
     
     //Iterate over all the the enabled transitions transitions
     const enabledTransitions = nonnullTransitions.filter( 
-      x => isEnabled(planId, properties, x,currentNode.resultantState))
+      x => isEnabled(planId, properties, x,currentNode.resultantState)) 
     for (let transition of enabledTransitions) {
       //Compute the effect of applying the transition to the currentNode's 
       //resultant worldstate
@@ -362,7 +362,11 @@ function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNod
   }
 }
 
-module.exports = {
-  generatePlanAsync: async (root,input) => generatePlan( input ),
-  generatePlan
+module.exports = (input,callback) => {
+  try { 
+    const data = generatePlan(input)
+    callback(null,data)
+  } catch (e) {
+    callback(e,null)
+  }
 }
