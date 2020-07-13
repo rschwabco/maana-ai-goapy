@@ -65,8 +65,11 @@ function generatePlan( input ) {
     currentIteration += 1
     logger.info(`PLANNING ITERATION ${currentIteration} for ${planId}`)
     //Check and update iterations count
-    if ( currentIteration >= ITERATION_LIMIT ) 
-      throwErr(planId, "Planning generations exceded max iteration")
+    if ( currentIteration >= ITERATION_LIMIT ) {
+      logger.warn(planId, "Planning generations exceded max iteration.  Returning partial solution")
+      return mkActionPlan(planId, currentNode, initialState, currentNode.resultantState, closedNodes, "FAILED TO CONVERGE")
+    }
+
     
     //Select the lowest cost node from the list of openNodes
     var currentNode = closeNode(openNodes, closedNodes);
@@ -74,7 +77,7 @@ function generatePlan( input ) {
     //Check if the resultant world state of the current node is the goal world state
     if (distanceTo(planId, properties, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
       logger.info(`Action plan for '${planId} completed in ${currentIteration} iterations.'`)
-      return mkActionPlan( planId, currentNode, initialState, currentNode.resultantState, closedNodes)
+      return mkActionPlan( planId, currentNode, initialState, currentNode.resultantState, closedNodes, "SOLVED")
     }
     
     //Iterate over all the the enabled transitions transitions
@@ -333,7 +336,7 @@ function ApplyPropertyEffect( property, operator, argument ) {
   op(property, argument.value)
 }
 
-function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNodes ){
+function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNodes, status ){
   //Allocate a new queue of actions to store the plan
   let actions = (currentNode.action)? [currentNode.action.action]: [];
   let firingSequence = (currentNode.action) ? [currentNode.action.id] : []
@@ -358,7 +361,8 @@ function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNod
     transitions: firingSequence,
     actions,
     initialState: initialState.toGraphQL(),
-    finalState: worldstate.toGraphQL()
+    finalState: worldstate.toGraphQL(),
+    status
   }
 }
 

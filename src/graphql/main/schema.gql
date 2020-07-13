@@ -177,6 +177,7 @@ type ActionPlan {
     totalCost: Float!
     initialState: [PropertyValue!]!
     finalState: [PropertyValue!]!
+    status: String!
 }
 
 type Query {
