@@ -20,12 +20,12 @@ class Effect {
     const keys = Object.keys(argument).filter(x => x !== 'id')
     if (keys.length === 0) {
       throwErr(
-        'The argument must include either a variable name or a literal value'
+        'The argument must include either a variable id or a literal value'
       )
     }
     if (keys.length > 1) {
       throwErr(
-        'The argument must include exactly one variable name or literal value'
+        'The argument must include exactly one variable id or literal value'
       )
     }
     const variable = variables[variableId]
@@ -43,9 +43,9 @@ class Effect {
         throwErr(`The "${argument.variableId}" variable does not exist.`)
       }
       if (arg.typeOf !== variable.typeOf) {
-        throwErr(`"${variableId}" and "${arg.name} have different types.`)
+        throwErr(`"${variableId}" and "${arg.id} have different types.`)
       }
-      this.argumentName = arg.name
+      this.argumentId = arg.id
     } else {
       if (!Types[keys[0]]) {
         throwErr`The argument type ${keys[0]} is not supported`
@@ -70,10 +70,10 @@ class Effect {
       return obj
     }
     const argument =
-      this.argumentName && this.argumentName !== null
+      this.argumentId && this.argumentId !== null
         ? {
-            id: `${this.argumentName}:${this.typeOf}`,
-            variableId: this.argumentName
+            id: `${this.argumentId}:${this.typeOf}`,
+            variableId: this.argumentId
           }
         : lit()
     return {
@@ -85,7 +85,7 @@ class Effect {
   }
 
   get id() {
-    return `${this.variableId}${this.assignmentOperator}${this.argumentName ? this.argumentName : this.value}`
+    return `${this.variableId}${this.assignmentOperator}${this.argumentId ? this.argumentId : this.value}`
   }
 }
 

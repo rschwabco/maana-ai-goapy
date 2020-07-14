@@ -86,7 +86,6 @@ function generatePlan( input ) {
     for (let transition of enabledTransitions) {
       //Compute the effect of applying the transition to the currentNode's 
       //resultant worldstate
-
       const newState = applyTransition(variables, transition, currentNode.resultantState);
       //Check if there is an action in the open list that can also reach 
       //the new current world state
@@ -307,6 +306,7 @@ function applyTransition(variables, transition, current) {
   //Allocate the new world state based in the current
   const newWorldState = new WorldState({ variableValues: current,variables})
   // Apply each of the effects of the transition
+
   for (let effect of Object.values(transition.effects) ) {
     applyEffectToWorldstate(variables, newWorldState, effect)
   }
@@ -323,7 +323,7 @@ function applyTransition(variables, transition, current) {
 function applyEffectToWorldstate( variables, worldstate, effect ) {
   let {variableId, argumentId, typeOf } = effect
   let variable = TryGetValue( worldstate, variableId, new VariableValue({variables, id:variableId} /* use default value */) )
-  let rhs = TryGetValue( worldstate, argumentId, new VariableValue({variables, id:variableId ,typeOf,value:effect.value}))
+  let rhs = TryGetValue( worldstate, argumentId, new VariableValue({variables, id:variableId ,typeOf,value:Types[typeOf].defaultValue}))
   ApplyVariableEffect( variable, effect.assignmentOperator, rhs )
 }
 

@@ -18,7 +18,6 @@ class Transition {
       logger.error(msg)
       throw new Error(msg)
     }
-    console.log(input)
     const cs = Array.isArray(conditions) ? conditions : []
     const es = Array.isArray(effects) ? effects : []
     this.id = id

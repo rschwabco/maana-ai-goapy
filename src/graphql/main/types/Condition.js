@@ -14,8 +14,8 @@ class Condition {
       throwErr('Variable id is null or empty')
     if (!comparisonOperator || comparisonOperator === '') throwErr(`comparisonOperator is null or empty`)
     const keys = Object.keys(argument).filter(x => x !== "id" )
-    if (keys.length === 0) throwErr(`The argument must include either a variable name or a literal value`) 
-    if (keys.length >1) throwErr("The argument must include exactly one variable name or literal value") 
+    if (keys.length === 0) throwErr(`The argument must include either a variable id or a literal value`) 
+    if (keys.length >1) throwErr("The argument must include exactly one variable id or literal value") 
     const variable = variables[variableId]
     if (!variable) throwErr(`The variable does not exist.`)
     if (!Types[variable.typeOf].comparisonOperators[comparisonOperator]) throwErr(`The ${comparisonOperator} comparisonOperator is not supported for the ${variable.typeOf} type.`)
