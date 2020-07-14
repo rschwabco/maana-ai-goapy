@@ -70,7 +70,10 @@ module.exports = {
       assignmentOperators: {
         '=': assignEqual,
         '+=': assignOp((x, y) => x + y),
-        '-=': assignOp((x, y) => x - y)
+        '-=': assignOp((x, y) => x - y),
+        '*=': assignOp((x, y) => x * y),
+        '/=': assignOp((x, y) => x / y),
+        '%=': assignOp((x, y) => x % y)
       }
     },
     "FLOAT": {
@@ -87,6 +90,8 @@ module.exports = {
         '=': assignEqual,
         '+=': assignOp((x, y) => x + y),
         '-=': assignOp((x, y) => x - y),
+        '*=': assignOp((x, y) => x * y),
+        '/=': assignOp((x, y) => x / y)
       }
 
     }

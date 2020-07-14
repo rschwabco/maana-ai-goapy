@@ -53,7 +53,9 @@ export const resolver = {
     generateActionPlan: async (_root, input) => {
       return new Promise((resolve, reject) => {
         workers(input, function(err, out) {
-          if (err) reject(err)
+          if (err) {
+            reject(err)
+          }
           resolve(out)
         })
       })
@@ -74,8 +76,10 @@ export const resolver = {
     },
     createVariables: async (_, input) => {
       const model = new GoapModel(input)
-      for ( const x of input.newVariables ) model.addVariable(x)
-      return input.newVariables.map( x => model.variables[x.id].toGraphQL() )
+      for (const x of input.newVariables) {
+        model.addVariable(x)
+      }
+      return input.newVariables.map(x => model.variables[x.id].toGraphQL())
     },
     createTransition: async (_, input) => {
       const model = new GoapModel(input)
@@ -86,8 +90,10 @@ export const resolver = {
     },
     createTransitions: async (_, input) => {
       const model = new GoapModel(input)
-      for ( const x of input.newTransitions ) model.addTransition(x)
-      return input.newTransitions.map( x => model.transitions[x.id].toGraphQL() )
+      for (const x of input.newTransitions) {
+        model.addTransition(x)
+      }
+      return input.newTransitions.map(x => model.transitions[x.id].toGraphQL())
     },
     createEffect: async (_, input) => {
       const model = new GoapModel(input)
@@ -109,9 +115,36 @@ export const resolver = {
     },
     flattenGoapModel: async (_, input) => {
       const model = new GoapModel(input)
-      const variables = GoapModel.variables.map( x => toGraphQL())
-      const transitions = GoapModel.transitions.map( x => toGraphQL())
-      return null
+      const variables = Object.values(model.variables)
+      const transitions = Object.values(model.transitions).map(x => ({
+        ...x,
+        conditions: Object.values(x.conditions).map(y => y.id),
+        effects: Object.values(x.effects).map(y => y.id)
+      }))
+      const conditions = {}
+      const effects = {}
+      const variableOrValues = {}
+      for (const t of Object.values(model.transitions)) {
+        for (const c of Object.values(t.conditions)) {
+          conditions[c.id] = c.toGraphQL()
+          const v = conditions[c.id].argument
+          variableOrValues[v.id] = v
+        }
+        for (const e of Object.values(t.effects)) {
+          effects[e.id] = e.toGraphQL()
+          const v = effects[e.id].argument
+          variableOrValues[v.id] = v
+        }
+      }
+      return {
+        variables,
+        transitions,
+        conditions: Object.values(conditions).map( x => ({ ...x, argument: x.argument.id }) ),
+        effects: Object.values(effects).map( x => ({ ...x, argument: x.argument.id }) ),
+        variableOrValues: Object.values(variableOrValues),
+        initialValues: [],
+        goals: []
+      }
     },
 
     createInitialValues: async (_, input) => {
@@ -121,17 +154,20 @@ export const resolver = {
         .map(x => new VariableValue({ ...x, variables: model.variables }))
       const obj = {}
       for (const v of vs) {
-        if (obj[v.id])
+        if (obj[v.id]) {
           throw new Error(
             `Duplicate variable ${id}.  Cannot create variable value.`
           )
+        }
         obj[v.id] = v
       }
       for (const p of Object.keys(model.variables)) {
-        if (obj[p] != null) continue
-        obj[p] = new VariableValue({ variables: model.variables, id: p})
+        if (obj[p] != null) {
+          continue
+        }
+        obj[p] = new VariableValue({ variables: model.variables, id: p })
       }
-      const result = Object.values(obj).map( x => x.toGraphQL())
+      const result = Object.values(obj).map(x => x.toGraphQL())
       return result
     }
   }

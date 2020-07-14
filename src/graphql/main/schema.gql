@@ -10,6 +10,7 @@ type GoapProblemInput {
     transitions: [ AddTransitionInput !]!
     effects: [ AddConditionInput !]!
     conditions: [ AddConditionInput !]!
+    variableOrValues: [VariableOrValue!]!
     initialValues: [ VariableOrValue !]!
     goals: [ AddConditionInput !]!
 }

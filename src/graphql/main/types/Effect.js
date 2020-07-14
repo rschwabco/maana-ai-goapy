@@ -72,7 +72,7 @@ class Effect {
     const argument =
       this.argumentId && this.argumentId !== null
         ? {
-            id: `${this.argumentId}:${this.typeOf}`,
+            id: `${this.argumentId}`,
             variableId: this.argumentId
           }
         : lit()
