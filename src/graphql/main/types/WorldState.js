@@ -1,14 +1,14 @@
 const { Types } = require('./constants')
 
-const { PropertyValue } = require('./PropertyValue')
+const { VariableValue } = require('./VariableValue')
 class WorldState {
   constructor( input ){
-    const properties = input.properties
-    const bs = input.bindings || input.conditions || input.propertyValues || []
+    const variables = input.variables
+    const bs = input.bindings || input.conditions || input.variableValues || []
     if (!Array.isArray(bs)) { 
-      for ( const b of Object.values(bs)) this[b.id] = new PropertyValue({...b, properties} )
+      for ( const b of Object.values(bs)) this[b.id] = new VariableValue({...b, variables} )
     } else {
-      for ( const b of bs) this[b.propertyId || b.id] = new PropertyValue({...b, properties})
+      for ( const b of bs) this[b.variableId || b.id] = new VariableValue({...b, variables})
     }
   }
 

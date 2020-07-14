@@ -5,7 +5,7 @@ const { logger } = require('./constants')
 class Transition {
   constructor(input) {
     const {
-      properties,
+      variables,
       id,
       cost,
       description,
@@ -25,8 +25,8 @@ class Transition {
     this.conditions = {}
     this.effects = {}
     this.description = description
-    cs.map(x => this.addCondition({ ...x, properties }))
-    es.map(x => this.addEffect({ ...x, properties }))
+    cs.map(x => this.addCondition({ ...x, variables }))
+    es.map(x => this.addEffect({ ...x, variables }))
     this.action = action
     this.cost = cost == null ? 1.0 : cost
   }

@@ -1,26 +1,26 @@
 const { Types, logger } = require('./constants')
 
-class PropertyValue {
+class VariableValue {
   constructor(input) {
-    const { properties, id } = input
-    const property = properties[id]
+    const { variables, id } = input
+    const variable = variables[id]
     const throwErr = reason => {
-      const msg = `Cannot construct Property Value.  ${reason}`
+      const msg = `Cannot construct Variable Value.  ${reason}`
       logger.error(msg)
       throw new Error(msg)
     }
-    if (!property) throwErr(`The "${id}" property does not exist.`)
+    if (!variable) throwErr(`The "${id}" variable does not exist.`)
     const keys = Object.keys(input).filter(
-      x => x !== 'id' && x !== 'properties' && x !== 'typeOf'
+      x => x !== 'id' && x !== 'variables' && x !== 'typeOf'
     )
 
     this.id = id
-    this.typeOf = property.typeOf
+    this.typeOf = variable.typeOf
     this.value =
       input.value != null
         ? input.value
         : keys.length === 0
-          ? Types[property.typeOf].defaultValue
+          ? Types[variable.typeOf].defaultValue
             : input[this.typeOf]!= null
               ? input[this.typeOf]
               : throwErr(`"${id}" does not have the same type as the provided value.`)
@@ -34,5 +34,5 @@ class PropertyValue {
 }
 
 module.exports = {
-  PropertyValue
+  VariableValue
 }

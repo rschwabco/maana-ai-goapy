@@ -3,11 +3,11 @@ import { gql } from 'apollo-server-express'
 import { SELF_ID } from '../../constants'
 import { logger, Types } from './types/constants'
 import { GoapModel } from './types/GoapModel'
-import { Property } from './types/Property'
+import { Variable } from './types/Variable'
 import { Transition } from './types/Transition'
 import { Effect } from './types/Effect'
 import { Condition } from './types/Condition'
-import { PropertyValue } from './types/PropertyValue'
+import { VariableValue } from './types/VariableValue'
 import { objectFromInstance } from 'io.maana.shared/dist/KindDBSvc'
 const workerFarm = require('worker-farm')
 
@@ -58,30 +58,30 @@ export const resolver = {
         })
       })
     },
-    propertyTypes: async () => Object.keys(Types),
-    assignmentOperators: async (_, { propertyType }) =>
+    variableTypes: async () => Object.keys(Types),
+    assignmentOperators: async (_, { variableType }) =>
       Object.keys(
-        (Types[propertyType] || { assignmentOperators: {} }).assignmentOperators
+        (Types[variableType] || { assignmentOperators: {} }).assignmentOperators
       ),
-    comparisonOperators: async (_, { propertyType }) =>
+    comparisonOperators: async (_, { variableType }) =>
       Object.keys(
-        (Types[propertyType] || { comparisonOperators: {} }).comparisonOperators
+        (Types[variableType] || { comparisonOperators: {} }).comparisonOperators
       ),
-    createProperty: async (_, input) => {
+    createVariable: async (_, input) => {
       const model = new GoapModel(input)
-      model.addProperty(input)
-      return model.properties[input.id]
+      model.addVariable(input)
+      return model.variables[input.id]
     },
-    createProperties: async (_, input) => {
+    createVariables: async (_, input) => {
       const model = new GoapModel(input)
-      for ( const x of input.newProperties ) model.addProperty(x)
-      return input.newProperties.map( x => model.properties[x.id].toGraphQL() )
+      for ( const x of input.newVariables ) model.addVariable(x)
+      return input.newVariables.map( x => model.variables[x.id].toGraphQL() )
     },
     createTransition: async (_, input) => {
       const model = new GoapModel(input)
       return new Transition({
         ...input,
-        properties: model.properties
+        variables: model.variables
       }).toGraphQL()
     },
     createTransitions: async (_, input) => {
@@ -91,38 +91,38 @@ export const resolver = {
     },
     createEffect: async (_, input) => {
       const model = new GoapModel(input)
-      return new Effect({ ...input, properties: model.properties }).toGraphQL()
+      return new Effect({ ...input, variables: model.variables }).toGraphQL()
     },
     createCondition: async (_, input) => {
       const model = new GoapModel(input)
       return new Condition({
         ...input,
-        properties: model.properties
+        variables: model.variables
       }).toGraphQL()
     },
-    createPropertyValue: async (_, input) => {
+    createVariableValue: async (_, input) => {
       const model = new GoapModel(input)
-      return new PropertyValue({
+      return new VariableValue({
         ...input,
-        properties: model.properties
+        variables: model.variables
       }).toGraphQL()
     },
     createInitialValues: async (_, input) => {
       const model = new GoapModel(input)
-      const vs = (input.propertyValues || [])
+      const vs = (input.variableValues || [])
         .filter(x => x != null)
-        .map(x => new PropertyValue({ ...x, properties: model.properties }))
+        .map(x => new VariableValue({ ...x, variables: model.variables }))
       const obj = {}
       for (const v of vs) {
         if (obj[v.id])
           throw new Error(
-            `Duplicate property ${id}.  Cannot create property value.`
+            `Duplicate variable ${id}.  Cannot create variable value.`
           )
         obj[v.id] = v
       }
-      for (const p of Object.keys(model.properties)) {
+      for (const p of Object.keys(model.variables)) {
         if (obj[p] != null) continue
-        obj[p] = new PropertyValue({ properties: model.properties, id: p})
+        obj[p] = new VariableValue({ variables: model.variables, id: p})
       }
       const result = Object.values(obj).map( x => x.toGraphQL())
       return result

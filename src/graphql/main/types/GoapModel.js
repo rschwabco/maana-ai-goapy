@@ -1,17 +1,17 @@
 /* eslint-disable prettier/prettier */
-const { Property } = require('./Property')
+const { Variable } = require('./Variable')
 const { Transition } = require('./Transition')
 const { logger } = require('./constants')
 
 class GoapModel {
   constructor(input) {
-    const { properties, transitions } = input
-    this.properties = {}
+    const { variables, transitions } = input
+    this.variables = {}
     this.transitions = {}
-    const ps = properties || []
-    ps.map( propertyInput => this.addProperty(propertyInput))
+    const ps = variables || []
+    ps.map( variableInput => this.addVariable(variableInput))
     const ts = transitions || []
-    ts.map( transitionInput => this.addTransition({...transitionInput, properties: this.properties})
+    ts.map( transitionInput => this.addTransition({...transitionInput, variables: this.variables})
     )
     logger.info(`Created GOAP Model '${this.id}'`)
   }
@@ -22,34 +22,34 @@ class GoapModel {
 
   toGraphQL() {
     const json = { }
-    json.properties = Object.values(this.properties).map( x => x.toGraphQL() )
+    json.variables = Object.values(this.variables).map( x => x.toGraphQL() )
     json.transitions = Object.values(this.transitions).map( x => x.toGraphQL() )
     return json
   }
 
-  addProperty ( propertyInput ) {
-    const id = propertyInput.id
-    if ( this.properties[id]) {
-        const newt = propertyInput.typeOf
-        const oldt = this.properties[id].typeOf
+  addVariable ( variableInput ) {
+    const id = variableInput.id
+    if ( this.variables[id]) {
+        const newt = variableInput.typeOf
+        const oldt = this.variables[id].typeOf
         if (newt !== oldt) {
-            const msg = `Cannot update property '${id}'.  The old type and the new type are not the same (${oldt}!=${newt}).`
+            const msg = `Cannot update variable '${id}'.  The old type and the new type are not the same (${oldt}!=${newt}).`
             logger.error(msg)
             throw new Error(msg)
         }
         try {
-          this.properties[id] = new Property({...this.properties[id],...propertyInput})
+          this.variables[id] = new Variable({...this.variables[id],...variableInput})
         } catch (e) {
           throw new Error(e.message)
         }
-        logger.info(`Updated property '${id}' in GOAP model.`)
+        logger.info(`Updated variable '${id}' in GOAP model.`)
     } else {
         try {
-            this.properties[id] = new Property({...propertyInput})
+            this.variables[id] = new Variable({...variableInput})
           } catch (e) {
             throw new Error(e.message)
         }
-        logger.info(`Added property '${id}' to GOAP model.`)
+        logger.info(`Added variable '${id}' to GOAP model.`)
     }
   }
 
@@ -60,7 +60,7 @@ class GoapModel {
     try { 
         const existingT = this.transitions[id] 
         const x = existingT ? existingT.toGraphQL() : {}
-        this.transitions[id] = new Transition({...x,...transitionInput, properties: this.properties})
+        this.transitions[id] = new Transition({...x,...transitionInput, variables: this.variables})
     } catch (e) {
       throw new Error(e.message)
     }

@@ -1,10 +1,10 @@
 const { Types, logger } = require('./constants')
 
 
-class Property {
+class Variable {
   constructor( input ){
     const throwErr = reason => {
-      const msg = `Cannot create property ${input.id}:${input.typeOf}. ${reason}`
+      const msg = `Cannot create variable ${input.id}:${input.typeOf}. ${reason}`
       logger.error(msg)
       throw new Error(msg)
     }
@@ -24,5 +24,5 @@ class Property {
 }
 
 module.exports = {
-  Property
+  Variable
 }

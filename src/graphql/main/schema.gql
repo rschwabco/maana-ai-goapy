@@ -4,32 +4,34 @@ type Info {
     description: String
 }
 
+
+
 """
-A property represents an observable of the worldstate.  
+A variable represents an observable of the worldstate.  
 """
-type Property {
+type Variable {
     """
-    A unique identifier for the property.  
+    A unique identifier for the variable.  
     """
     id: ID!
-    "An optional description of the property"
+    "An optional description of the variable"
     description: String
     """
-    The type of scalar values that can be assigned to the property.
+    The type of scalar values that can be assigned to the variable.
     Must be one of: STRING, INT, BOOLEAN or FLOAT.
     """
     typeOf: String!
     """
     A weighting factor used to compute the weighted distance 
-    between two worldstates which contain this property.  
-    This factor can be used to prevent properties with very large
+    between two worldstates which contain this variable.  
+    This factor can be used to prevent variables with very large
     values from swamping the distance calculation.   If in doubt 
     use a value of 1.0.
     """
     weight: Float!
 }
 
-input PropertyInput {
+input VariableInput {
   id: ID
   typeOf: String!
   description: String
@@ -38,10 +40,10 @@ input PropertyInput {
 
 """
 A 'union' type representing a scalar value that can be 
-assigned to a property.  Exactly one of the optional fields
+assigned to a variable.  Exactly one of the optional fields
 must be provided.
 """
-type PropertyValue {
+type VariableValue {
     id: ID!
     STRING: String
     FLOAT: Float
@@ -49,7 +51,7 @@ type PropertyValue {
     BOOLEAN: Boolean
 }
 
-input PropertyValueInput {
+input VariableValueInput {
     id: ID!
     STRING: String
     FLOAT: Float
@@ -58,22 +60,22 @@ input PropertyValueInput {
 }
 
 """
-A 'union' type representing a scalar value or property 
+A 'union' type representing a scalar value or variable 
 that can occur on the right hand side of a effect or 
 constraint.
 """
-type PropertyOrValue {
+type VariableOrValue {
     id: ID!
-    propertyId: ID
+    variableId: ID
     STRING: String
     FLOAT: Float
     INT: Int
     BOOLEAN: Boolean
 }
 
-input PropertyOrValueInput {
+input VariableOrValueInput {
     id: ID
-    propertyId: ID 
+    variableId: ID 
     STRING: String
     FLOAT: Float 
     INT: Int 
@@ -83,44 +85,44 @@ input PropertyOrValueInput {
 
 """
 An effect is a reassignment of the value associated 
-with a property.   Depending on the type of the property, 
+with a variable.   Depending on the type of the variable, 
 reassignment may perform logical or arithmetic operations
 to combine the previous value with the provided argument.
-To be well formed, the property, operator and argument 
+To be well formed, the variable, operator and argument 
 must all have the same type.
 """
 type Effect {
     id: ID!
-    propertyId: ID!
+    variableId: ID!
     assignmentOperator: ID!
-    argument: PropertyOrValue!
+    argument: VariableOrValue!
 }
 
 input EffectInput {
     id: ID
-    propertyId: ID!
+    variableId: ID!
     assignmentOperator: ID!
-    argument: PropertyOrValueInput!
+    argument: VariableOrValueInput!
 }
 
 """
 A condition is a logical expression that must be satisfied
 in order for a transition to be enabled.   To be well formed
-the property, operator and argument must all have the same
+the variable, operator and argument must all have the same
 type.
 """
 type Condition {
     id: ID!
-    propertyId: ID!
+    variableId: ID!
     comparisonOperator: ID!
-    argument: PropertyOrValue!
+    argument: VariableOrValue!
 }
 
 input ConditionInput {
     id: ID 
-    propertyId: ID!
+    variableId: ID!
     comparisonOperator: ID!
-    argument: PropertyOrValueInput!
+    argument: VariableOrValueInput!
 }
 
 """
@@ -150,7 +152,7 @@ type Transition {
     action: ID
     """
     A collection of mutations to perform on the worldstate
-    properties whenever the transaction fires.
+    variables whenever the transaction fires.
     """
     effects: [ Effect! ]!
     """
@@ -175,8 +177,8 @@ type ActionPlan {
     transitions: [ ID! ]!
     totalSteps: Int!
     totalCost: Float!
-    initialState: [PropertyValue!]!
-    finalState: [PropertyValue!]!
+    initialState: [VariableValue!]!
+    finalState: [VariableValue!]!
     status: String!
 }
 
@@ -184,51 +186,51 @@ type Query {
     info: Info!
 
     """
-    What types can be assigned to properties?
+    What types can be assigned to variables?
     """
-    propertyTypes: [ID!]!
+    variableTypes: [ID!]!
 
     """
-    Given a type, what are the assignment operators that are defined for properties of that type?
+    Given a type, what are the assignment operators that are defined for variables of that type?
     """
-    assignmentOperators( propertyType: ID! ): [ID!]!
+    assignmentOperators( variableType: ID! ): [ID!]!
 
     """
-    Given a type, what are the comparison operations that are defined for properties of that type?
+    Given a type, what are the comparison operations that are defined for variables of that type?
     """
-    comparisonOperators( propertyType: ID! ): [ID!]!
+    comparisonOperators( variableType: ID! ): [ID!]!
 
-    """Smart constructor for a single property.   Will return a value only if it is well formed."""
-    createProperty( properties: [PropertyInput!]!, id: String!, description: String, typeOf: ID!, weight: Float ): Property
+    """Smart constructor for a single variable.   Will return a value only if it is well formed."""
+    createVariable( variables: [VariableInput!]!, id: String!, description: String, typeOf: ID!, weight: Float ): Variable
     
-    """Smart constructor for a multiple properties.   Will return values only if all are well formed."""
-    createProperties( properties: [PropertyInput!]!, newProperties:[PropertyInput!]! ): [Property!]!
+    """Smart constructor for a multiple variables.   Will return values only if all are well formed."""
+    createVariables( variables: [VariableInput!]!, newVariables:[VariableInput!]! ): [Variable!]!
 
     """Smart constructor for a single transition.   Will return a value only if it is well formed."""
-    createTransition( properties: [PropertyInput!]!, transitions:[TransitionInput], id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition
+    createTransition( variables: [VariableInput!]!, transitions:[TransitionInput], id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition
 
     """Smart constructor for an array of transitions.   Will return a value only if it is well formed."""
-    createTransitions( properties: [PropertyInput!]!, transitions:[TransitionInput], newTransitions:[TransitionInput!]! ): [Transition!]
+    createTransitions( variables: [VariableInput!]!, transitions:[TransitionInput], newTransitions:[TransitionInput!]! ): [Transition!]
     
     """Smart constructor for an effect.   Will return a value only if it is well formed."""
-    createEffect( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Effect
+    createEffect( variables:[VariableInput!]!, variableId:String!, operator:ID!, argument: VariableOrValueInput! ): Effect
 
     """Smart constructor for a single condition.   Will return a value only if it is well formed."""
-    createCondition( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Condition
+    createCondition( variables:[VariableInput!]!, variableId:String!, operator:ID!, argument: VariableOrValueInput! ): Condition
 
-    """Smart constructor for a property value.  Will return a value only if it is well formed."""
-    createPropertyValue( properties:[PropertyInput!]!, id: String!, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): PropertyValue
+    """Smart constructor for a variable value.  Will return a value only if it is well formed."""
+    createVariableValue( variables:[VariableInput!]!, id: String!, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): VariableValue
 
-    """Smart constructor for a property or value.  Will return a value only if it is well formed."""
-    createPropertyOrValue( properties:[PropertyInput!]!, id: String!, propertyId: ID, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): PropertyOrValue
+    """Smart constructor for a variable or value.  Will return a value only if it is well formed."""
+    createVariableOrValue( variables:[VariableInput!]!, id: String!, variableId: ID, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): VariableOrValue
 
-    """Smart constructor initial values.   Will verify each of the provided property values, remove invalid values, and create default values for any missing properties. """
-    createInitialValues( properties:[PropertyInput!]!, propertyValues:[PropertyValueInput]):[PropertyValue!]!
+    """Smart constructor initial values.   Will verify each of the provided variable values, remove invalid values, and create default values for any missing variables. """
+    createInitialValues( variables:[VariableInput!]!, variableValues:[VariableValueInput]):[VariableValue!]!
 
     """
-    Given a collection of properties and transitions, an intial state, and a collection of goal conditions, what is the least
+    Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
     cost action plan that acheives that goal?
     """
-    generateActionPlan( properties: [PropertyInput!]!, transitions: [TransitionInput!]!, initialState: [PropertyValueInput!]!, goal: [ConditionInput!]! ): ActionPlan!    
+    generateActionPlan( variables: [VariableInput!]!, transitions: [TransitionInput!]!, initialState: [VariableValueInput!]!, goal: [ConditionInput!]! ): ActionPlan!    
 }
 

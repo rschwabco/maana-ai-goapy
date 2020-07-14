@@ -3,9 +3,9 @@ const { Condition } = require('./Condition')
 
 class Goal {
   constructor( input ){
-    const { properties, conditions } = input
+    const { variables, conditions } = input
     this.conditions = Object.fromEntries(
-        conditions.map( x => { const y = new Condition({...x, properties}); return [y.id,y]})
+        conditions.map( x => { const y = new Condition({...x, variables}); return [y.id,y]})
     )
   }
 

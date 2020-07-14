@@ -6,7 +6,7 @@
 // ===========================================================================*/
 var SortedArrayMap = require("collections/sorted-array-map");
 const { PlannerNode } = require("./types/PlannerNode")
-const { PropertyValue } = require("./types/PropertyValue")
+const { VariableValue } = require("./types/VariableValue")
 const { WorldState } = require("./types/WorldState")
 const { Goal } = require("./types/Goal")
 const { GoapModel } = require("./types/GoapModel")
@@ -24,15 +24,15 @@ function throwErr(id, reason){
 function generatePlan( input ) {
   const planId = uuid()
   logger.info(`Staring planning for ${planId}`)
-  const { properties:ps, transitions:ts, initialState: init, goal: goalinput } = input 
-  const model = new GoapModel({properties:ps, transitions:ts })
-  const {properties,transitions} = model
-  const initPropValues = init.map( x => new PropertyValue({...x, properties}))
-  const initialState = new WorldState({ propertyValues: initPropValues, properties})
-  const worldstate = new WorldState({ propertyValues: initPropValues, properties} )
-  const goal = new Goal({ properties, conditions: goalinput })
+  const { variables:ps, transitions:ts, initialState: init, goal: goalinput } = input 
+  const model = new GoapModel({variables:ps, transitions:ts })
+  const {variables,transitions} = model
+  const initPropValues = init.map( x => new VariableValue({...x, variables}))
+  const initialState = new WorldState({ variableValues: initPropValues, variables})
+  const worldstate = new WorldState({ variableValues: initPropValues, variables} )
+  const goal = new Goal({ variables, conditions: goalinput })
   const nonnullTransitions = Object.values(transitions)
-  const initialDistance = distanceTo(planId, properties, worldstate, goal )
+  const initialDistance = distanceTo(planId, variables, worldstate, goal )
   let _id = 0
   const nextId = () => { _id++; return _id }
            
@@ -75,29 +75,29 @@ function generatePlan( input ) {
     var currentNode = closeNode(openNodes, closedNodes);
     
     //Check if the resultant world state of the current node is the goal world state
-    if (distanceTo(planId, properties, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
+    if (distanceTo(planId, variables, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
       logger.info(`Action plan for '${planId} completed in ${currentIteration} iterations.'`)
       return mkActionPlan( planId, currentNode, initialState, currentNode.resultantState, closedNodes, "SOLVED")
     }
     
     //Iterate over all the the enabled transitions transitions
     const enabledTransitions = nonnullTransitions.filter( 
-      x => isEnabled(planId, properties, x,currentNode.resultantState)) 
+      x => isEnabled(planId, variables, x,currentNode.resultantState)) 
     for (let transition of enabledTransitions) {
       //Compute the effect of applying the transition to the currentNode's 
       //resultant worldstate
 
-      const newState = applyTransition(properties, transition, currentNode.resultantState);
+      const newState = applyTransition(variables, transition, currentNode.resultantState);
       //Check if there is an action in the open list that can also reach 
       //the new current world state
-      let inOpenNode = IsInOpenNodes(planId, properties, openNodes, newState);
+      let inOpenNode = IsInOpenNodes(planId, variables, openNodes, newState);
       if( inOpenNode != null ) {
         //In true case check if the new node is better
         //The old node is better than this new one
         if(currentNode.cost + transition.cost > inOpenNode.cost){
          continue
         } 
-        const dist = distanceTo(planId, properties, newState, goal);
+        const dist = distanceTo(planId, variables, newState, goal);
         //The new node is better than the old, lets update the node data
         inOpenNode.parentId = currentNode.id;
         inOpenNode.cost = currentNode.g + transition.cost;
@@ -108,7 +108,7 @@ function generatePlan( input ) {
         //Add the new node to the open list
         const newNode = new PlannerNode(
           currentNode.cost + transition.cost, 
-          distanceTo(planId, properties, newState, goal), 
+          distanceTo(planId, variables, newState, goal), 
           nextId(), 
           currentNode.id, 
           newState, 
@@ -156,10 +156,10 @@ function closeNode( openNodes, closedNodes ) { // PlannerNode_GS
 
 //Iterate all the open nodes and check if anyone has the target world 
 // state as resultant world state
-function IsInOpenNodes(modelId, properties, _open, target_worldstate) { // , out PlannerNode_GS found
+function IsInOpenNodes(modelId, variables, _open, target_worldstate) { // , out PlannerNode_GS found
   for (let [_,open_nodes] of _open.entries()) {
     for (let open_node of open_nodes) {
-      const dist = distanceTo(modelId, properties, open_node.resultantState, target_worldstate, true)
+      const dist = distanceTo(modelId, variables, open_node.resultantState, target_worldstate, true)
       if ( dist === 0) return open_node
       return null
     }
@@ -173,23 +173,23 @@ function TryGetValue( state, key, defaultValue ){
   return defaultValue
 }
 
-function isEnabled(modelId, properties, transition, state) {
+function isEnabled(modelId, variables, transition, state) {
   for ( const condition of Object.values(transition.conditions) ) {
-    const currentProp = TryGetValue(state, condition.propertyId )
+    const currentProp = TryGetValue(state, condition.variableId )
     if (!currentProp) {
-      throwErr(modelId, `Can't determine if transition '${transition.id}' is enabled.  I refers to a property ${condition.propertyId} which cannot be found.`)
+      throwErr(modelId, `Can't determine if transition '${transition.id}' is enabled.  I refers to a variable ${condition.variableId} which cannot be found.`)
     }
     
-    const { weight } = properties[ condition.propertyId ]
+    const { weight } = variables[ condition.variableId ]
     if (condition.argumentId && condition.argumentId !== "") {
-      const arg = {...TryGetValue(state, condition.argumentId,new PropertyValue({properties, id:condition.argumentId})), comparisonOperator: condition.comparisonOperator || "=="}
-      const dist = distanceToProperty( currentProp, arg, weight, true )
+      const arg = {...TryGetValue(state, condition.argumentId,new VariableValue({variables, id:condition.argumentId})), comparisonOperator: condition.comparisonOperator || "=="}
+      const dist = distanceToVariable( currentProp, arg, weight, true )
       if (dist > MIN_PROPERTY_DISTANCE) {
         logger.info(`Transition ${transition.id} is DISABLED`)
         return false
       }
     } else {
-      const dist = distanceToProperty( currentProp, { ...condition, comparisonOperator: condition.comparisonOperator || "=="}, weight, true )
+      const dist = distanceToVariable( currentProp, { ...condition, comparisonOperator: condition.comparisonOperator || "=="}, weight, true )
       if (dist > MIN_PROPERTY_DISTANCE ) {
         logger.info(`Transition ${transition.id} is DISABLED`)
         return false
@@ -202,7 +202,7 @@ function isEnabled(modelId, properties, transition, state) {
 
 /** Given two worldstates, compute the distance between them. 
  * Distance is computed as a weighted sum of the distance 
- * between their individual properties.
+ * between their individual variables.
  * @param source - the source worldstate
  * @param target - the target worldstate
  * @param no_weighting - an optional parameter which controls whether
@@ -218,11 +218,11 @@ function isEnabled(modelId, properties, transition, state) {
  * a list of conditions which all must be met.  Then the collection
  * is empty, then the goal is trivially satisfied.
 */
-function distanceTo( modelId, properties, source, target, no_weighting=false ){
+function distanceTo( modelId, variables, source, target, no_weighting=false ){
   let totalDistance = 0
   // Iterate over the conditions in the target state.
   // and compute the weighted sum of the distances between 
-  // the corresponding properties in the source and target
+  // the corresponding variables in the source and target
   // worldstates.
   const makeArg = x => {
     const obj = {}
@@ -231,35 +231,35 @@ function distanceTo( modelId, properties, source, target, no_weighting=false ){
   }
   const objs = target.constructor.name === "Goal"
     ? Object.values(target.conditions)
-    : Object.values(target).map( x => new Condition({properties, propertyId: x.id, comparisonOperator:"==", argument: makeArg(x) }))
+    : Object.values(target).map( x => new Condition({variables, variableId: x.id, comparisonOperator:"==", argument: makeArg(x) }))
   for (const v of objs) {
-    // get the corresponding property from the current state
-    const prop = TryGetValue( source, v.propertyId, new PropertyValue({properties, id: v.propertyId }) )
+    // get the corresponding variable from the current state
+    const prop = TryGetValue( source, v.variableId, new VariableValue({variables, id: v.variableId }) )
     if (prop == null) 
       throwErr(modelId,'Cannot compute distance between worldstates.'
-        +`The target world state uses variable ${v.propertyId} that is not defined`)
-    const {weight} = properties[prop.id]
+        +`The target world state uses variable ${v.variableId} that is not defined`)
+    const {weight} = variables[prop.id]
     if (v.argumentId) {
-      const temp = { ... TryGetValue( source, v.argumentId, new PropertyValue({properties, id: v.argumentId }) )}
+      const temp = { ... TryGetValue( source, v.argumentId, new VariableValue({variables, id: v.argumentId }) )}
       if (temp == null) 
         throwErr(modelId, 'Cannot compute distance between worldstates.'
         +`The goal state uses variable ${v.argumentId} that is not defined`)
       const arg = { ...temp, comparisonOperator: v.comparisonOperator  }
       // compute the weighted distance between the source and 
-      // target properties and add it to the sum
-      totalDistance += distanceToProperty(prop, arg, weight, no_weighting)
+      // target variables and add it to the sum
+      totalDistance += distanceToVariable(prop, arg, weight, no_weighting)
     } else {
       // compute the weighted distance between the source and 
-      // target properties and add it to the sum
-      totalDistance += distanceToProperty(prop, v, weight, no_weighting)
+      // target variables and add it to the sum
+      totalDistance += distanceToVariable(prop, v, weight, no_weighting)
     }
   }
   return totalDistance
 }
 
-/** Given two properties, compute the weighted distance between them. 
- * @param source - the source property
- * @param target - the target property
+/** Given two variables, compute the weighted distance between them. 
+ * @param source - the source variable
+ * @param target - the target variable
  * @param no_weighting - an optional parameter which controls whether
  *   how the weighted distance is computed.   When the parameter is true, 
  *   the distances are multiplied by unity, otherwise distances are
@@ -273,10 +273,10 @@ function distanceTo( modelId, properties, source, target, no_weighting=false ){
  * a list of conditions which all must be met.  Then the collection
  * is empty, then the goal is trivially satisfied.
 */
-function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=false){
-  // deconstruct the input to get the individual properties.
-  const { typeOf: lhsType, value: lhsValue } = lhsProperty
-  const { typeOf: rhsType, comparisonOperator:op, value: rhsValue } = rhsProperty
+function distanceToVariable( lhsVariable, rhsVariable, weight, no_weighting=false){
+  // deconstruct the input to get the individual variables.
+  const { typeOf: lhsType, value: lhsValue } = lhsVariable
+  const { typeOf: rhsType, comparisonOperator:op, value: rhsValue } = rhsVariable
   const operator = op || "=="
   // If the types are incompatible, then throw an error.  In the future
   // we might consider upcasting (e.g. Int to Float) when possible.
@@ -284,9 +284,9 @@ function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=fals
   // Lookup the distance calculation to perform based on the 
   // type of the arguments and the comparison operation.
   const typeDef = Types[lhsType]
-  if (typeDef == null) throw new Error(`Unsupported type ${lhsType} in distanceToProperty function`)
+  if (typeDef == null) throw new Error(`Unsupported type ${lhsType} in distanceToVariable function`)
   const distance = typeDef.comparisonOperators[operator]
-  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not supported for ${lhsProperty.propertyId}: ${lhsType}.` ) 
+  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not supported for ${lhsVariable.variableId}: ${lhsType}.` ) 
   // compute and return the weighted distance
   const wt = no_weighting ? 1.0 : weight
   const d = distance(lhsValue, rhsValue) * wt
@@ -303,12 +303,12 @@ function distanceToProperty( lhsProperty, rhsProperty, weight, no_weighting=fals
  * transition are satisfied by the given worldstate; this
  * must be verified by the caller.
  */
-function applyTransition(properties, transition, current) {
+function applyTransition(variables, transition, current) {
   //Allocate the new world state based in the current
-  const newWorldState = new WorldState({ propertyValues: current,properties})
+  const newWorldState = new WorldState({ variableValues: current,variables})
   // Apply each of the effects of the transition
   for (let effect of Object.values(transition.effects) ) {
-    applyEffectToWorldstate(properties, newWorldState, effect)
+    applyEffectToWorldstate(variables, newWorldState, effect)
   }
   return newWorldState
   
@@ -320,20 +320,20 @@ function applyTransition(properties, transition, current) {
  * @param effect - the effect to apply
  * @returns null (mutates the worldstate)
  */
-function applyEffectToWorldstate( properties, worldstate, effect ) {
-  let {propertyId, argumentId, typeOf } = effect
-  let variable = TryGetValue( worldstate, propertyId, new PropertyValue({properties, id:propertyId} /* use default value */) )
-  let rhs = TryGetValue( worldstate, argumentId, new PropertyValue({properties, id:propertyId ,typeOf,value:effect.value}))
-  ApplyPropertyEffect( variable, effect.assignmentOperator, rhs )
+function applyEffectToWorldstate( variables, worldstate, effect ) {
+  let {variableId, argumentId, typeOf } = effect
+  let variable = TryGetValue( worldstate, variableId, new VariableValue({variables, id:variableId} /* use default value */) )
+  let rhs = TryGetValue( worldstate, argumentId, new VariableValue({variables, id:variableId ,typeOf,value:effect.value}))
+  ApplyVariableEffect( variable, effect.assignmentOperator, rhs )
 }
 
 
-function ApplyPropertyEffect( property, operator, argument ) {
-  const typeDef = Types[property.typeOf]
-  if (typeDef == null ) throw new Error (`Cannot apply effects.  Type ${property.typeOf} is not supported`)
+function ApplyVariableEffect( variable, operator, argument ) {
+  const typeDef = Types[variable.typeOf]
+  if (typeDef == null ) throw new Error (`Cannot apply effects.  Type ${variable.typeOf} is not supported`)
   const op = typeDef.assignmentOperators[operator]
-  if (op == null) throw new Error(`Cannot apply ${operator} operator to ${property.typeOf}`)
-  op(property, argument.value)
+  if (op == null) throw new Error(`Cannot apply ${operator} operator to ${variable.typeOf}`)
+  op(variable, argument.value)
 }
 
 function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNodes, status ){
