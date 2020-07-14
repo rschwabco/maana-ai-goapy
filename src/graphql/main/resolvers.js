@@ -69,7 +69,7 @@ export const resolver = {
       ),
     createProperty: async (_, input) => {
       const model = new GoapModel(input)
-      model.addProperty({ properties: [input]})
+      model.addProperty(input)
       return model.properties[input.id]
     },
     createProperties: async (_, input) => {
