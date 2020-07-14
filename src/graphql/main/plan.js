@@ -306,7 +306,6 @@ function applyTransition(variables, transition, current) {
   //Allocate the new world state based in the current
   const newWorldState = new WorldState({ variableValues: current,variables})
   // Apply each of the effects of the transition
-
   for (let effect of Object.values(transition.effects) ) {
     applyEffectToWorldstate(variables, newWorldState, effect)
   }
@@ -323,7 +322,7 @@ function applyTransition(variables, transition, current) {
 function applyEffectToWorldstate( variables, worldstate, effect ) {
   let {variableId, argumentId, typeOf } = effect
   let variable = TryGetValue( worldstate, variableId, new VariableValue({variables, id:variableId} /* use default value */) )
-  let rhs = TryGetValue( worldstate, argumentId, new VariableValue({variables, id:variableId ,typeOf,value:Types[typeOf].defaultValue}))
+  let rhs = TryGetValue( worldstate, argumentId, new VariableValue({variables, id:variableId ,typeOf,value: (effect.value == null) ? Types[typeOf].defaultValue : effect.value}))
   ApplyVariableEffect( variable, effect.assignmentOperator, rhs )
 }
 

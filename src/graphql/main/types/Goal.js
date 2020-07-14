@@ -9,7 +9,7 @@ class Goal {
     )
   }
 
-  get id() { return `{${Object.values(this.conditions).map(x= x.id).join(',')}}`}
+  get id() { return `{${Object.values(this.conditions).map(x=> x.id).join(',')}}`}
 }
 
 module.exports = {

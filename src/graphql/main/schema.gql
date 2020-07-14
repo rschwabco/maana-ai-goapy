@@ -4,7 +4,37 @@ type Info {
     description: String
 }
 
+type GoapProblemInput {
+    id: ID!
+    variables: [ Variable !]!
+    transitions: [ AddTransitionInput !]!
+    effects: [ AddConditionInput !]!
+    conditions: [ AddConditionInput !]!
+    initialValues: [ VariableOrValue !]!
+    goals: [ AddConditionInput !]!
+}
 
+type AddTransitionInput {
+  id: ID!
+  description: String
+  conditions: [ID!]!
+  action: ID
+  effects: [ID!]!
+}
+
+type AddConditionInput {
+  id: ID!
+  variableId: ID!
+  comparisonOperator: ID!
+  argument: ID!
+}
+
+type AddEffectInput {
+  id: ID!
+  variableId: ID!
+  assignmentOperator: ID!
+  argument: ID!
+}
 
 """
 A variable represents an observable of the worldstate.  
@@ -226,6 +256,9 @@ type Query {
 
     """Smart constructor initial values.   Will verify each of the provided variable values, remove invalid values, and create default values for any missing variables. """
     createInitialValues( variables:[VariableInput!]!, variableValues:[VariableValueInput]):[VariableValue!]!
+
+    """Flatten GOAP Problem"""
+    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput!]!, initialValues:[VariableValueInput!]!, goals:[ ConditionInput!]! ): GoapProblemInput!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least

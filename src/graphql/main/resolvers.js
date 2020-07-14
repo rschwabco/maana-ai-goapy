@@ -107,6 +107,13 @@ export const resolver = {
         variables: model.variables
       }).toGraphQL()
     },
+    flattenGoapModel: async (_, input) => {
+      const model = new GoapModel(input)
+      const variables = GoapModel.variables.map( x => toGraphQL())
+      const transitions = GoapModel.transitions.map( x => toGraphQL())
+      return null
+    },
+
     createInitialValues: async (_, input) => {
       const model = new GoapModel(input)
       const vs = (input.variableValues || [])
