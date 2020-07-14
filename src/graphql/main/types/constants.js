@@ -72,7 +72,7 @@ module.exports = {
         '+=': assignOp((x, y) => x + y),
         '-=': assignOp((x, y) => x - y),
         '*=': assignOp((x, y) => x * y),
-        '/=': assignOp((x, y) => x / y),
+        '/=': assignOp((x, y) => Math.round(x / y)),
         '%=': assignOp((x, y) => x % y)
       }
     },
