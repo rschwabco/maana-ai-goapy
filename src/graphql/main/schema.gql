@@ -200,9 +200,15 @@ type Query {
 
     """Smart constructor for a single property.   Will return a value only if it is well formed."""
     createProperty( properties: [PropertyInput!]!, id: String!, description: String, typeOf: ID!, weight: Float ): Property
+    
+    """Smart constructor for a multiple properties.   Will return values only if all are well formed."""
+    createProperties( properties: [PropertyInput!]!, newProperties:[PropertyInput!]! ): [Property!]!
 
     """Smart constructor for a single transition.   Will return a value only if it is well formed."""
-    createTransition( properties: [PropertyInput!]!, id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition
+    createTransition( properties: [PropertyInput!]!, transitions:[TransitionInput], id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition
+
+    """Smart constructor for an array of transitions.   Will return a value only if it is well formed."""
+    createTransitions( properties: [PropertyInput!]!, transitions:[TransitionInput], newTransitions:[TransitionInput!]! ): [Transition!]
     
     """Smart constructor for an effect.   Will return a value only if it is well formed."""
     createEffect( properties:[PropertyInput!]!, propertyId:String!, operator:ID!, argument: PropertyOrValueInput! ): Effect

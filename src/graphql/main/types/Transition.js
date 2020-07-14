@@ -18,8 +18,9 @@ class Transition {
       logger.error(msg)
       throw new Error(msg)
     }
-    const cs = conditions || []
-    const es = effects || []
+    console.log(input)
+    const cs = Array.isArray(conditions) ? conditions : []
+    const es = Array.isArray(effects) ? effects : []
     this.id = id
     this.conditions = {}
     this.effects = {}

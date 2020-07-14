@@ -69,10 +69,13 @@ export const resolver = {
       ),
     createProperty: async (_, input) => {
       const model = new GoapModel(input)
-      return new Property({
-        ...input,
-        properties: model.properties
-      }).toGraphQL()
+      model.addProperty({ properties: [input]})
+      return model.properties[input.id]
+    },
+    createProperties: async (_, input) => {
+      const model = new GoapModel(input)
+      for ( const x of input.newProperties ) model.addProperty(x)
+      return input.newProperties.map( x => model.properties[x.id].toGraphQL() )
     },
     createTransition: async (_, input) => {
       const model = new GoapModel(input)
@@ -80,6 +83,11 @@ export const resolver = {
         ...input,
         properties: model.properties
       }).toGraphQL()
+    },
+    createTransitions: async (_, input) => {
+      const model = new GoapModel(input)
+      for ( const x of input.newTransitions ) model.addTransition(x)
+      return input.newTransitions.map( x => model.transitions[x.id].toGraphQL() )
     },
     createEffect: async (_, input) => {
       const model = new GoapModel(input)

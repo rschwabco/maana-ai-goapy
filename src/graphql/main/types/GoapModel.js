@@ -38,7 +38,7 @@ class GoapModel {
             throw new Error(msg)
         }
         try {
-          this.properties[id] = new Property({...propertyInput})
+          this.properties[id] = new Property({...this.properties[id],...propertyInput})
         } catch (e) {
           throw new Error(e.message)
         }
@@ -58,7 +58,9 @@ class GoapModel {
     const action = (Object.keys( this.transitions).includes(id))? "update" : "add"
 
     try { 
-      this.transitions[id] = new Transition({...transitionInput, properties: this.properties})
+        const existingT = this.transitions[id] 
+        const x = existingT ? existingT.toGraphQL() : {}
+        this.transitions[id] = new Transition({...x,...transitionInput, properties: this.properties})
     } catch (e) {
       throw new Error(e.message)
     }
