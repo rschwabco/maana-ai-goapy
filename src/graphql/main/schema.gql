@@ -260,7 +260,7 @@ type Query {
     createInitialValues( variables:[VariableInput!]!, variableValues:[VariableValueInput]):[VariableValue!]!
 
     """Flatten GOAP Problem"""
-    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput!]!, initialValues:[VariableValueInput!]!, goals:[ ConditionInput!]! ): GoapProblemInput!
+    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): GoapProblemInput!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
