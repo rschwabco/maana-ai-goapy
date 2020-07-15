@@ -141,6 +141,7 @@ export const resolver = {
       const initialValues = new WorldState({ variables: model.variables, variableValues: (input.initialValues || []) }).toGraphQL()
       const goals = ( input.goals || []).map( x => new Condition({variables: model.variables, ...x }).toGraphQL()).map(x => ({...x,argument:x.argument.id}))
       return {
+        id: `{${transitions.map(x => x.id).join(",")}}`,
         variables,
         transitions,
         conditions: Object.values(conditions).map( x => ({ ...x, argument: x.argument.id }) ),
@@ -150,7 +151,6 @@ export const resolver = {
         goals
       }
     },
-
     createInitialValues: async (_, input) => {
       const model = new GoapModel(input)
       const vs = (input.variableValues || [])

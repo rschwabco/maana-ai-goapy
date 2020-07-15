@@ -4,18 +4,18 @@ type Info {
     description: String
 }
 
-type GoapProblemInput {
+type GoapProblem {
     id: ID!
     variables: [ Variable !]!
-    transitions: [ AddTransitionInput ]
-    effects: [ AddEffectInput ]
-    conditions: [ AddConditionInput ]
-    variableOrValues: [VariableOrValue ]
-    initialValues: [ VariableValue ]
-    goals: [ AddConditionInput ]
+    transitions: [ FlattenedTransition !]!
+    effects: [ FlattenedEffect !]!
+    conditions: [ FlattenedCondition !]!
+    variableOrValues: [ VariableOrValue !]!
+    initialValues: [ VariableValue !]!
+    goals: [ FlattenedCondition !]!
 }
 
-type AddTransitionInput {
+type FlattenedTransition {
   id: ID!
   description: String
   conditions: [ID!]!
@@ -24,14 +24,14 @@ type AddTransitionInput {
   cost: Float!
 }
 
-type AddConditionInput {
+type FlattenedCondition {
   id: ID!
   variableId: ID!
   comparisonOperator: ID!
   argument: ID!
 }
 
-type AddEffectInput {
+type FlattenedEffect {
   id: ID!
   variableId: ID!
   assignmentOperator: ID!
@@ -259,8 +259,8 @@ type Query {
     """Smart constructor initial values.   Will verify each of the provided variable values, remove invalid values, and create default values for any missing variables. """
     createInitialValues( variables:[VariableInput!]!, variableValues:[VariableValueInput]):[VariableValue!]!
 
-    """Flatten GOAP Problem"""
-    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): GoapProblemInput!
+    """Flatten GOAP Problem so that it can be stored using Q's crud operators"""
+    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): GoapProblem!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
