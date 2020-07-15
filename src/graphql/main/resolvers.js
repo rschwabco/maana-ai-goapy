@@ -9,6 +9,8 @@ import { Effect } from './types/Effect'
 import { Condition } from './types/Condition'
 import { VariableValue } from './types/VariableValue'
 import { objectFromInstance } from 'io.maana.shared/dist/KindDBSvc'
+import { WorldState } from './types/WorldState'
+import { Goal }  from './types/Goal'
 const workerFarm = require('worker-farm')
 
 const workers = workerFarm({ maxRetries: 0 }, require.resolve('./plan'))
@@ -136,14 +138,16 @@ export const resolver = {
           variableOrValues[v.id] = v
         }
       }
+      const initialValues = new WorldState({ variables: model.variables, variableValues: (input.initialValues || []) }).toGraphQL()
+      const goals = ( input.goals || []).map( x => new Condition({variables: model.variables, ...x }).toGraphQL()).map(x => ({...x,argument:x.argument.id}))
       return {
         variables,
         transitions,
         conditions: Object.values(conditions).map( x => ({ ...x, argument: x.argument.id }) ),
         effects: Object.values(effects).map( x => ({ ...x, argument: x.argument.id }) ),
         variableOrValues: Object.values(variableOrValues),
-        initialValues: [],
-        goals: []
+        initialValues,
+        goals
       }
     },
 

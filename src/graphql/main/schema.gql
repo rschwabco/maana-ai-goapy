@@ -7,12 +7,12 @@ type Info {
 type GoapProblemInput {
     id: ID!
     variables: [ Variable !]!
-    transitions: [ AddTransitionInput !]!
-    effects: [ AddConditionInput !]!
-    conditions: [ AddConditionInput !]!
-    variableOrValues: [VariableOrValue!]!
-    initialValues: [ VariableOrValue !]!
-    goals: [ AddConditionInput !]!
+    transitions: [ AddTransitionInput ]
+    effects: [ AddEffectInput ]
+    conditions: [ AddConditionInput ]
+    variableOrValues: [VariableOrValue ]
+    initialValues: [ VariableValue ]
+    goals: [ AddConditionInput ]
 }
 
 type AddTransitionInput {
@@ -21,6 +21,7 @@ type AddTransitionInput {
   conditions: [ID!]!
   action: ID
   effects: [ID!]!
+  cost: Float!
 }
 
 type AddConditionInput {
