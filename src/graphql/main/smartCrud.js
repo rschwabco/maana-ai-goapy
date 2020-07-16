@@ -340,6 +340,69 @@ function updateVariableType(input) {
   return flattenGoapModel({variables: Object.values(model.variables), transitions, initialValues, goals})
 }
 
+/*** Given a goap problem, delete a variable.  Replace all references
+ * to that variable on with the default value for that variable's 
+ * type.
+ * @param input.variables - the state variables of the GOAP model
+*  @param input.transitions - the transitions of the GOAP model
+ * @param input.initialValues - the initial values
+ * @param input.goals - the conditions that must be met by the action plan
+ * @param input.id - the identifier of the variable being removed
+ * @returns a GOAP problem structure suitable for use with the Q
+ *   CRUD operations
+ * Where the variable occurs in the left hand side of an
+ * assignment or operation, then the assignment or operation will
+ * be removed.   When the variable occurs on the right 
+ * hand side of an assignment or comparison, it will be replaced
+ * with the default value for the type of the variable on the left.
+ */
+function removeVariable(input) {
+  // Construct a model from the variables and transitions.   This ensures
+  // that they are well-formed and in normal form.
+  const model = new GoapModel(input)
+  const gqlModel = model.toGraphQL()
+  // destructure the input
+  const { id } = input 
+  const v = model.variables[id]
+  // If the variable doesn't exist, then we can return the original
+  // goap problem.
+  if (!v) return flattenGoapModel(input)
+  // If we reached here, then the variable exists and needs to be
+  // removed.
+
+  const variables = gqlModel.variables.filter( x => x.id !== id )
+  // this helper function is used to transform the uses of the 
+  // variable in assignments, goals, conditions and initial values
+  // so that they are type consistent.
+  const update = xs => xs.filter( x=> x.id !== id && x.variableId !== id )
+    .map( x => {
+      if (x.argument && x.argument.variableId === id) {
+        delete x.argument.variableId
+        x.argument[v.typeOf] = Types[v.typeOf].defaultValue
+      }
+      return x
+  })
+
+  //Update the variables that occur in the transitions.
+  //Variables may occur in both the effects and conditions, 
+  //either on the left hand side of the operation, or as an
+  //argument on the right hand side. 
+  const transitions = gqlModel.transitions.map(t => {
+    const conditions = update(t.conditions)
+    const effects = update(t.effects)
+    return {...t, conditions, effects}
+  })
+  // update the initial values
+  const initialValues = update(input.initialValues || [] )
+  // update the goals
+  const goals = update(input.goals || [] )
+  // finally, call flattenGoapModel.   This ensures that everything 
+  // is in normal form and correctly indexed.
+  return flattenGoapModel({variables, transitions, initialValues, goals})
+}
+
+
+
 module.exports = { 
     variableTypes: async () => Object.keys(Types),
     assignmentOperators: ( { variableType }) =>

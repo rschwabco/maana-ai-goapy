@@ -272,7 +272,7 @@ type Query {
     updateVariableType( id: ID!, typeOf: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
 
     """Remove all occurences of a variable from a GOAP problem, replacing its occurence on the right hand side of comparisons or assignments with an approprate default"""
-    removeVariable( id: ID!, variable:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
+    removeVariable( id: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
