@@ -256,11 +256,23 @@ type Query {
     """Smart constructor for a variable or value.  Will return a value only if it is well formed."""
     createVariableOrValue( variables:[VariableInput!]!, id: String!, variableId: ID, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): VariableOrValue
 
-    """Smart constructor initial values.   Will verify each of the provided variable values, remove invalid values, and create default values for any missing variables. """
+    """Smart constructor for initial values.   Will verify each of the provided variable values, remove invalid values, and create default values for any missing variables. """
     createInitialValues( variables:[VariableInput!]!, variableValues:[VariableValueInput]):[VariableValue!]!
+
+    """Smart constructor for a single initial value.   Will verify if the variable exists, and the value is the correct type. """
+    createInitialValue( variables:[VariableInput!]!, id: String!,  BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String):VariableValue!
 
     """Flatten GOAP Problem so that it can be stored using Q's crud operators"""
     flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): GoapProblem!
+
+    """Rename a variable, changing all occurrences of the variable name in a goap problem."""
+    updateVariableName( id: ID!, newId: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
+    
+    """Change the type of a variable, and replace any values assigned or compared to it with the default values."""
+    updateVariableType( id: ID!, typeOf: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
+
+    """Remove all occurences of a variable from a GOAP problem, replacing its occurence on the right hand side of comparisons or assignments with an approprate default"""
+    removeVariable( id: ID!, variable:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
