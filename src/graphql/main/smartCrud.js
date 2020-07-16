@@ -153,7 +153,7 @@ function flattenGoapModel( input) {
 /** smart constructor for an inital value */
 function createInitialValue( input) {
     const model = new GoapModel(input)
-    return new VariableValue({...input, variable: model.variables }).toGraphQL()
+    return new VariableValue({...input, variables: model.variables }).toGraphQL()
 }
 
 /** Given a possibly incomplete collection of initial values, verify that the

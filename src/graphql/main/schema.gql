@@ -260,7 +260,7 @@ type Query {
     createInitialValues( variables:[VariableInput!]!, variableValues:[VariableValueInput]):[VariableValue!]!
 
     """Smart constructor for a single initial value.   Will verify if the variable exists, and the value is the correct type. """
-    createInitialValue( variables:[VariableInput!]!, id: String!,  BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String):VariableValue!
+    createInitialValue( variables:[VariableInput!]!, id: ID!,  BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String):VariableValue!
 
     """Flatten GOAP Problem so that it can be stored using Q's crud operators"""
     flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): GoapProblem!
