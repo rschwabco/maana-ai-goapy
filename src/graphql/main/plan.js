@@ -365,11 +365,59 @@ function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNod
   }
 }
 
-module.exports = (input,callback) => {
-  try { 
-    const data = generatePlan(input)
-    callback(null,data)
-  } catch (e) {
-    callback(e,null)
+/** Given a set of state variables, an initial state and a transition, 
+ * determine if the transition is enabled.  If it is, return the 
+ * result of applying the transition, otherwise return the state 
+ * without change.
+ */
+function singleStep(input){
+  const model = new GoapModel({variables: input.variables, transitions: [input.transition]})
+  const state = new WorldState({variables: model.variables, variableValues: input.state})
+  const transition = Object.values(model.transitions)[0]
+  const variables = model.variables
+  if (isEnabled(model.id, variables, transition, state)) {
+    // If the transition is enabled, then return the result of applying the 
+    // transition.
+    const nextstate = applyTransition(model.variables, transition, state)
+    return nextstate.toGraphQL()
+  } else {
+    // If the transition is not enabled, then return null.
+    return null
   }
+}
+
+/** Given a goap model and a state, return the identifiers of the 
+ * transitions that are enabled. */
+function enabledTransitions(input){
+  const model = new GoapModel(input)
+  const variables = model.variables
+  const state = new WorldState({variables, variableValues: input.state})
+  return Object.values(model.transitions).filter( transition => 
+    isEnabled(model.id, variables, transition, state)).map( x => x.id)
+}
+
+/** Given a goap model, a state and a goal, test if the goal is satisfied. */
+function areGoalsSatisfied(input){
+  console.log(input)
+  const model = new GoapModel({variables: input.variables })
+  const variables = model.variables
+  const state = new WorldState({ variables: variables, variableValues: input.state})
+  const goal = new Goal({ variables, conditions: input.goals })
+  const dist = distanceTo(model.id, variables, state, goal )
+  console.log(dist)
+  return dist < MIN_PROPERTY_DISTANCE
+}
+
+module.exports = {
+    generateActionPlan: (input,callback) => {
+    try { 
+      const data = generatePlan(input)
+      callback(null,data)
+    } catch (e) {
+      callback(e,null)
+    }
+  },
+  singleStep: async (_root,input) => singleStep(input),
+  enabledTransitions: async(_root,input) => enabledTransitions(input),
+  areGoalsSatisfied: async (_root,input) => areGoalsSatisfied(input)
 }

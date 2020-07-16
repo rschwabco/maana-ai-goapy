@@ -11,10 +11,11 @@ import { VariableValue } from './types/VariableValue'
 import { objectFromInstance } from 'io.maana.shared/dist/KindDBSvc'
 import { WorldState } from './types/WorldState'
 import { Goal }  from './types/Goal'
+import { areGoalsSatisfied, singleStep, enabledTransitions }  from './plan'
 import SmartCrud from './smartCrud'
 const workerFarm = require('worker-farm')
 
-const workers = workerFarm({ maxRetries: 0 }, require.resolve('./plan'))
+const workers = workerFarm({ maxRetries: 0 }, require.resolve('./plan'),['generateActionPlan'])
 
 require('dotenv').config()
 
@@ -55,7 +56,7 @@ export const resolver = {
     },
     generateActionPlan: async (_root, input) => {
       return new Promise((resolve, reject) => {
-        workers(input, function(err, out) {
+        workers.generateActionPlan(input, function(err, out) {
           if (err) {
             reject(err)
           }
@@ -63,6 +64,9 @@ export const resolver = {
         })
       })
     },
-    ...SmartCrud
+    ...SmartCrud,
+    enabledTransitions,
+    areGoalsSatisfied,
+    singleStep
   }
 }

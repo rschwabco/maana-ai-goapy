@@ -274,6 +274,15 @@ type Query {
     """Remove all occurences of a variable from a GOAP problem, replacing its occurence on the right hand side of comparisons or assignments with an approprate default"""
     removeVariable( id: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
 
+    """Given a collection of goap state variables, a goap state and a transition, return the result of applying the transition."""
+    areGoalsSatisfied(variables:[VariableInput!]!, state:[VariableValueInput!]!, goals:[ConditionInput]):Boolean!
+    
+    """Given a collection of goap state variables, a goap state and a transition, return the result of applying the transition.  Returns null if the transition is not enabled."""
+    singleStep(variables:[VariableInput!]!, state:[VariableValueInput!]!, transition:TransitionInput!):[VariableValue!]!
+
+    """Given a goap model and the current state, return the identifiers for the enabled transitions."""
+    enabledTransitions(variables:[VariableInput!]!, state:[VariableValueInput!]!, transitions:[TransitionInput!]!):[ID!]!
+
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
     cost action plan that acheives that goal?
