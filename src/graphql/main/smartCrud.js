@@ -13,7 +13,6 @@ import { Goal }  from './types/Goal'
 
 /** A helper founction for creating an ID for a condition, goal, variable or effect */
 function mkId( x) {
-    console.log(x)
     const ifnotnull = (x,f) => x== null? null: f(x)
     if (x.argument)
       return `${x.variableId}${x.assignmentOperator||x.comparisonOperator}${mkId(x.argument)}`
@@ -426,6 +425,7 @@ function findUnusedInstances(input) {
   const model = new GoapModel({variables: input.variables })
   const variables = model.variables
   const transitions = model.transitions
+  const distinct = xs => Object.values(Object.fromEntries( xs.map( x => [x.id,x])))
   const illformedConditions = []
   const illformedEffects = []
   for (const t of input.transitions ) {
@@ -472,16 +472,15 @@ function findUnusedInstances(input) {
   const unusedEffects = (input.effects||[]).map( x => ({...x, id:x.id? x.id: mkId(x), argument:mkId(x.argument)})).filter( x => !usedEffectIds.includes(x.id) )
   const unusedVariableOrValues = (input.variableOrValues || []).map( x => ({...x,id: x.id? x.id : mkId(x)})).filter( x => !usedVariableOrValueIds.includes(x.id))
   
-  console.log(unusedVariableOrValues)
   return {
     id:model.id,
     variables:[],
     transitions: [],
-    conditions: illformedConditions.concat(unusedConditions),
-    effects: illformedEffects.concat(unusedEffects),
-    goals: illformedGoals,
-    initialValues: illformedInitialValues,
-    variableOrValues: unusedVariableOrValues
+    conditions: distinct(illformedConditions.concat(unusedConditions)),
+    effects: distinct(illformedEffects.concat(unusedEffects)),
+    goals: distinct(illformedGoals),
+    initialValues: distinct(illformedInitialValues),
+    variableOrValues: distinct(unusedVariableOrValues)
   }
 }  
 
