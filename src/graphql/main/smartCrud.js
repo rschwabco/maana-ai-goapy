@@ -134,10 +134,9 @@ function flattenGoapModel( input) {
         ...x
         }).toGraphQL()
     )
-    .map(x => ({
-        ...x,
-        argument: x.argument.id
-    }))
+    .map(x => { 
+        variableOrValues[argument.id] = x.argument
+        return ({...x, argument: x.argument.id }))
     return {
     id: `{${transitions.map(x => x.id).join(",")}}`,
     variables,
