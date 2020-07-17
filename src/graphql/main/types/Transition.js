@@ -23,6 +23,7 @@ class Transition {
     this.id = id
     this.conditions = {}
     this.effects = {}
+    this.seq = {}
     this.description = description
     cs.map(x => this.addCondition({ ...x, variables }))
     es.map(x => this.addEffect({ ...x, variables }))
@@ -40,12 +41,31 @@ class Transition {
 
   addEffect(input) {
     const effect = new Effect(input)
-    this.effects[effect.id] = effect
+    if (effect.order == null) {
+      const ks = Object.keys(this.seq)
+      const ns = ks.map( x => Number.parseInt(x) )
+      const n = ns.reduce((z,x) => Math.max(z,x),0) +1
+      effect.order =n
+    }
+    if (this.seq[effect.order]==null) {
+      this.effects[effect.id] = effect
+      this.seq[effect.order] = effect.id
+    } else {
+      const msg = `Cannot add effect ${effect.id} to '${this.id}'.   Cannot determine ordinal position.`
+      logger.error(msg)
+      throw new Error(msg)
+    }
   }
 
   addCondition(input) {
     const condition = new Condition(input)
     this.conditions[condition.id] = condition
+  }
+
+  orderedEffects() {
+    const ords = Object.keys(this.seq).map(x =>Number.parseInt(x)).sort()
+    const effects = ords.map( i => this.effects[this.seq[`${i}`]])
+    return effects
   }
 }
 

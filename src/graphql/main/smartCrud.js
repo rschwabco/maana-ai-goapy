@@ -401,7 +401,42 @@ function removeVariable(input) {
   return flattenGoapModel({variables, transitions, initialValues, goals})
 }
 
-
+/** Given a goap problem description, return a goap problem containing 
+ * all the objects that can be safely removed from the problem without   
+ * changing the behavior
+  */
+function garbageCollect(input) {
+  const model = new GoapModel({variables: input.variables })
+  const variables = model.variables
+  const transitions = model.transitions
+  for (t of input.transitions ) {
+      model.addTransition({...t, conditions:[], effects:[]})
+      for (x of t.conditions) {
+        try { t.addCondition({...x, variables}) } catch (_) { logger.warn(`Condition ${x.id} it is ill-formed`)}
+      } 
+      for (x of t.effects) {
+        try { t.addEffects({...x, variables}) } catch (_) { logger.warn(`Effects ${x.id} it is ill-formed`)}
+      }
+  }
+  const goals = []
+  for (const g of input.goals) {
+      try{ goals.push( new Condition({variables, ...g}).toGraphQL())} catch (_) { logger.warn(`goal ${x.id} it is ill-formed`)}
+  }
+  const initialValues = []
+  for (const v of input.initialValues ) {
+      try{ initialValues.push(new VariableValue({ variables, ...v}).toGraphQL())} catch (_) { logger.warn(`initial condition ${x.id} is ill-formed`)}
+  }
+  const usedObjects = flattenGoapModel( { variables, transitions: transitions.map(x => x.toGraphQL), goals, initialValues })
+  return {
+    variables:[],
+    transitions: [],
+    conditions: input.conditions.filter( x => !usedConditionIds.contains(x.id)).map( x => ({...x, argument: x.argument.id})),
+    effects: input.effects.filter( x => !usedEffectIds.contains(x.id)).map( x => ({...x, argument: x.argument.id})),
+    goals: input.goals.filter( x => !usedGoalIds.contains(x.id)).map( x => ({...x, argument: x.argument.id})),
+    initialValues: input.initialValues.filter( x => !usedInitialValuesIds.contains(x.id)),
+    variableOrValues: input.variableOrValues.filter( x => !usedVariableValueIds.contains(x.id))
+  }
+}  
 
 module.exports = { 
     variableTypes: async () => Object.keys(Types),
@@ -424,6 +459,7 @@ module.exports = {
     flattenGoapModel: async (_, input) => flattenGoapModel(input),
     updateVariableName: async (_, input) => updateVariableName(input),
     updateVariableType: async (_, input) => updateVariableType(input),
-    removeVariable: async (_, input) => removeVariable(input)
+    removeVariable: async (_, input) => removeVariable(input),
+    garbageCollect: async (_, input) => garbageCollect(input)
 }
 

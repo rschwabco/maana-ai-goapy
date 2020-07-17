@@ -23,6 +23,7 @@ function throwErr(id, reason){
 
 function generatePlan( input ) {
   const planId = uuid()
+  const visitedStates = {}
   logger.info(`Staring planning for ${planId}`)
   const { variables:ps, transitions:ts, initialState: init, goal: goalinput } = input 
   const model = new GoapModel({variables:ps, transitions:ts })
@@ -33,6 +34,7 @@ function generatePlan( input ) {
   const goal = new Goal({ variables, conditions: goalinput })
   const nonnullTransitions = Object.values(transitions)
   const initialDistance = distanceTo(planId, variables, worldstate, goal )
+  visitedStates[initialState.id] = true
   let _id = 0
   const nextId = () => { _id++; return _id }
            
@@ -87,6 +89,8 @@ function generatePlan( input ) {
       //Compute the effect of applying the transition to the currentNode's 
       //resultant worldstate
       const newState = applyTransition(variables, transition, currentNode.resultantState);
+      if (visitedStates[newState.id]) continue // already been here
+      visitedStates[newState.id]=true
       //Check if there is an action in the open list that can also reach 
       //the new current world state
       let inOpenNode = IsInOpenNodes(planId, variables, openNodes, newState);
@@ -112,7 +116,6 @@ function generatePlan( input ) {
           currentNode.id, 
           newState, 
           transition);       
-
         AddToOpen(openNodes, newNode);
       }
     }
@@ -138,8 +141,9 @@ function AddToOpen( openNodes, newNode ) {
 function closeNode( openNodes, closedNodes ) { // PlannerNode_GS 
   //Get open nodes listed with the cheapest cost
   let cheapestNodes = openNodes.min();
-  //Get target node
-  let target = cheapestNodes[0];
+  //pick a random node from those that are cheapest
+  const idx = Math.floor(Math.random(cheapestNodes.length))
+  let target = cheapestNodes[idx];
   //Store the last cheap node in the closed list
   closedNodes.set(target.id, target);
   //Remove the close node from the open list
@@ -147,7 +151,7 @@ function closeNode( openNodes, closedNodes ) { // PlannerNode_GS
   if (cheapestNodes.length == 1 ){
     openNodes.delete( target.score );
   } else {
-    openNodes.set(target.score, cheapestNodes.slice(1));
+    openNodes.set(target.score, cheapestNodes.slice(idx,1));
   }
   //Return the closed node
   return target;
@@ -306,7 +310,7 @@ function applyTransition(variables, transition, current) {
   //Allocate the new world state based in the current
   const newWorldState = new WorldState({ variableValues: current,variables})
   // Apply each of the effects of the transition
-  for (let effect of Object.values(transition.effects) ) {
+  for (let effect of transition.orderedEffects() ) {
     applyEffectToWorldstate(variables, newWorldState, effect)
   }
   return newWorldState
@@ -342,16 +346,19 @@ function mkActionPlan( modelId, currentNode, initialState, worldstate, closedNod
   const totalCost = currentNode.cost
   //Iterate goal node "childs" to start node using the parent id
   let i = 0
-  while (i<ITERATION_LIMIT && currentNode.parentId != 0) {
-    i ++
+  let node = currentNode
+  while (i<ITERATION_LIMIT ) {
     //Update current node 
-    currentNode = closedNodes.get(currentNode.parentId)
+    node = closedNodes.get(node.parentId)
     //Check if the node has an action assigned.  If it is, add it 
     // to the action plan
-    if (currentNode.action != null) {
-      actions.unshift(currentNode.action.action);
-      firingSequence.unshift(currentNode.action.id)
+    if (node.action != null) {
+      actions.unshift(node.action.action);
+      firingSequence.unshift(node.action.id)
+    } else {
+      break
     }
+    i ++
   } 
   return {
     id: `${modelId}`,
@@ -398,13 +405,11 @@ function enabledTransitions(input){
 
 /** Given a goap model, a state and a goal, test if the goal is satisfied. */
 function areGoalsSatisfied(input){
-  console.log(input)
   const model = new GoapModel({variables: input.variables })
   const variables = model.variables
   const state = new WorldState({ variables: variables, variableValues: input.state})
   const goal = new Goal({ variables, conditions: input.goals })
   const dist = distanceTo(model.id, variables, state, goal )
-  console.log(dist)
   return dist < MIN_PROPERTY_DISTANCE
 }
 

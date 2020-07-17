@@ -36,6 +36,7 @@ type FlattenedEffect {
   variableId: ID!
   assignmentOperator: ID!
   argument: ID!
+  order: Int!
 }
 
 """
@@ -128,6 +129,7 @@ type Effect {
     variableId: ID!
     assignmentOperator: ID!
     argument: VariableOrValue!
+    order: Int!
 }
 
 input EffectInput {
@@ -135,6 +137,7 @@ input EffectInput {
     variableId: ID!
     assignmentOperator: ID!
     argument: VariableOrValueInput!
+    order: Int
 }
 
 """
@@ -282,6 +285,9 @@ type Query {
 
     """Given a goap model and the current state, return the identifiers for the enabled transitions."""
     enabledTransitions(variables:[VariableInput!]!, state:[VariableValueInput!]!, transitions:[TransitionInput!]!):[ID!]!
+
+    """Given a goap problem, return a flattened goap problem containing the values that can be safely deleted"""
+    garbageCollect(variables:[VariableInput!]!, transitions:[TransitionInput!]!, state:[VariableOrValueInput!]!, goals:[ConditionInput!]!):GoapProblem!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
