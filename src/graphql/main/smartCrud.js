@@ -458,6 +458,7 @@ function findUnusedInstances(input) {
 
   console.log(usedVariableOrValueIds)
   return {
+    id:model.id,
     variables:[],
     transitions: [],
     conditions: illformedConditions.concat(unusedConditions),
