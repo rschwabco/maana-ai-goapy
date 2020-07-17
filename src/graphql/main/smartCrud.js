@@ -109,6 +109,7 @@ function flattenGoapModel( input) {
         conditions[c.id] = c.toGraphQL()
         const v = conditions[c.id].argument
         variableOrValues[v.id] = v
+        conditions[c.id].argument = v.id
     }
     for (const e of Object.values(t.effects)) {
         // Append each effect of the current transition to the
@@ -117,6 +118,7 @@ function flattenGoapModel( input) {
         effects[e.id] = e.toGraphQL()
         const v = effects[e.id].argument
         variableOrValues[v.id] = v
+        effects[e.id].argument = v.id
     }
     }
     // convert any provided initial values to a worldstate object.  This will ensure that 
@@ -139,8 +141,8 @@ function flattenGoapModel( input) {
     id: `{${transitions.map(x => x.id).join(",")}}`,
     variables,
     transitions,
-    conditions: Object.values(conditions).map( x => ({ ...x, argument: x.argument.id }) ),
-    effects: Object.values(effects).map( x => ({ ...x, argument: x.argument.id }) ),
+    conditions: Object.values(conditions),
+    effects: Object.values(effects),
     variableOrValues: Object.values(variableOrValues),
     initialValues,
     goals

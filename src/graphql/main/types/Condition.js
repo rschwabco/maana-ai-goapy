@@ -49,7 +49,7 @@ class Condition {
     }
   }
 
-  get id() { return `${this.variableId}${this.comparisonOperator}${this.argumentId? this.argumentId : this.value }`}
+  get id() { return `${this.variableId}${this.comparisonOperator}${this.argumentId? this.argumentId : this.typeOf==="STRING"? `"${this.value}"`: this.value }`}
 }
 
 module.exports = {
