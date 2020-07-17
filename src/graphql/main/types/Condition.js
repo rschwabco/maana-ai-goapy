@@ -13,7 +13,7 @@ class Condition {
     if (!variableId || variableId === '')
       throwErr('Variable id is null or empty')
     if (!comparisonOperator || comparisonOperator === '') throwErr(`comparisonOperator is null or empty`)
-    const keys = Object.keys(argument).filter(x => x !== "id" )
+    const keys = Object.keys(argument).filter(x => x !== "id" && argument[x]!=null )
     if (keys.length === 0) throwErr(`The argument must include either a variable id or a literal value`) 
     if (keys.length >1) throwErr("The argument must include exactly one variable id or literal value") 
     const variable = variables[variableId]

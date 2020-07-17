@@ -17,7 +17,7 @@ class Effect {
     if (!assignmentOperator || assignmentOperator === '') {
       throwErr('assignmentOperator is null or empty')
     }
-    const keys = Object.keys(argument).filter(x => x !== 'id')
+    const keys = Object.keys(argument).filter(x => x !== 'id' && argument[x]!=null)
     if (keys.length === 0) {
       throwErr(
         'The argument must include either a variable id or a literal value'

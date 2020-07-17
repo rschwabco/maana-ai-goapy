@@ -11,7 +11,7 @@ class VariableValue {
     }
     if (!variable) throwErr(`The "${id}" variable does not exist.`)
     const keys = Object.keys(input).filter(
-      x => x !== 'id' && x !== 'variables' && x !== 'typeOf'
+      x => x !== 'id' && x !== 'variables' && x !== 'typeOf' && input[x]!==null
     )
 
     this.id = id
