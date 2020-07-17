@@ -80,7 +80,8 @@ class Effect {
       id: this.id,
       variableId: this.variableId,
       assignmentOperator: this.assignmentOperator,
-      argument
+      argument,
+      order
     }
   }
 
