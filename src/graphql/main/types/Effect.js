@@ -7,7 +7,6 @@ class Effect {
       logger.error(msg)
       throw new Error(msg)
     }
-    console.log(JSON.stringify(input))
     const { variables, variableId, assignmentOperator, argument } = input
     if (!argument) {
       throwErr('No argument was provided')
