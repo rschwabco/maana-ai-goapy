@@ -30,7 +30,6 @@ type FlattenedCondition {
   id: ID!
   variableId: ID!
   comparisonOperator: ID!
-  argument: ID!
 }
 
 type FlattenedEffect {
@@ -38,7 +37,6 @@ type FlattenedEffect {
   variableId: ID!
   assignmentOperator: ID!
   argument: ID!
-  order: Int!
 }
 
 """

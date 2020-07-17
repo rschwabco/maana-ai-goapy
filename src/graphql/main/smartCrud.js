@@ -423,8 +423,9 @@ function findUnusedInstances(input) {
       } 
       for (const x of t.effects) {
         try { model.transitions[t.id].addEffect({...x, variables}) } 
-        catch (_) { 
+        catch (e) { 
             illformedEffects.push({...x,id:x.id?x.id:mkId(x)})
+            logger.warn( e.message)
             logger.warn(`Effects ${x.id} it is ill-formed`)}
       }
   }

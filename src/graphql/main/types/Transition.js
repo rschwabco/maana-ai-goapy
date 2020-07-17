@@ -41,20 +41,8 @@ class Transition {
 
   addEffect(input) {
     const effect = new Effect(input)
-    if (effect.order == null) {
-      const ks = Object.keys(this.seq)
-      const ns = ks.map( x => Number.parseInt(x) )
-      const n = ns.reduce((z,x) => Math.max(z,x),0) +1
-      effect.order =n
-    }
-    if (this.seq[effect.order]==null) {
-      this.effects[effect.id] = effect
-      this.seq[effect.order] = effect.id
-    } else {
-      const msg = `Cannot add effect ${effect.id} to '${this.id}'.   Cannot determine ordinal position.`
-      logger.error(msg)
-      throw new Error(msg)
-    }
+    this.seq[Object.keys(this.seq).length] = effect.id
+    this.effects[effect.id] = effect
   }
 
   addCondition(input) {
