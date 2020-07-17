@@ -65,7 +65,7 @@ class Effect {
 
   toGraphQL() {
     const lit = () => {
-      const obj = { id: `${this.value}` }
+      const obj = { id: `${this.typeOf=="STRING"?`"${this.value}"`:this.value}` }
       obj[this.typeOf] = this.value
       return obj
     }
@@ -85,7 +85,7 @@ class Effect {
   }
 
   get id() {
-    return `${this.variableId}${this.assignmentOperator}${this.argumentId ? this.argumentId : this.value}`
+    return `${this.variableId}${this.assignmentOperator}${this.argumentId ? this.argumentId : this.typeOf=="STRING"?`"${this.value}"`:this.value}`
   }
 }
 

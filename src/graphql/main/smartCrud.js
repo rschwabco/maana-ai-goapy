@@ -405,36 +405,66 @@ function removeVariable(input) {
  * all the objects that can be safely removed from the problem without   
  * changing the behavior
   */
-function garbageCollect(input) {
+function findUnusedInstances(input) {
   const model = new GoapModel({variables: input.variables })
   const variables = model.variables
   const transitions = model.transitions
-  for (t of input.transitions ) {
+  const illformedConditions = []
+  const illformedEffects = []
+  const mkId = x => `${x.variableId}${x.assignmentOperator||x.comparisonOperator}${x.argument.variableId||`"${x.argument.STRING}"`||x.argument.INT||x.argument.BOOLEAN||x.argument.FLOAT}`
+  for (const t of input.transitions ) {
       model.addTransition({...t, conditions:[], effects:[]})
-      for (x of t.conditions) {
-        try { t.addCondition({...x, variables}) } catch (_) { logger.warn(`Condition ${x.id} it is ill-formed`)}
+      for (const x of t.conditions) {
+        try { model.transitions[t.id].addCondition({...x, variables}) } 
+        catch (_) { 
+            illformedConditions.push({...x,id:x.id?x.id:mkId(x),})
+            logger.warn(`Condition ${x.id} it is ill-formed`)}
       } 
-      for (x of t.effects) {
-        try { t.addEffects({...x, variables}) } catch (_) { logger.warn(`Effects ${x.id} it is ill-formed`)}
+      for (const x of t.effects) {
+        try { model.transitions[t.id].addEffect({...x, variables}) } 
+        catch (_) { 
+            illformedEffects.push({...x,id:x.id?x.id:mkId(x)})
+            logger.warn(`Effects ${x.id} it is ill-formed`)}
       }
   }
+  const illformedGoals = []
   const goals = []
   for (const g of input.goals) {
-      try{ goals.push( new Condition({variables, ...g}).toGraphQL())} catch (_) { logger.warn(`goal ${x.id} it is ill-formed`)}
+      try{ goals.push( new Condition({variables, ...g}).toGraphQL())} 
+      catch (_) { 
+          illformedGoals.push({...g,id:g.id?g.id:mkId(g),})
+          logger.warn(`goal ${g.id} it is ill-formed`)
+        }
   }
+  const illformedInitialValues = []
   const initialValues = []
   for (const v of input.initialValues ) {
-      try{ initialValues.push(new VariableValue({ variables, ...v}).toGraphQL())} catch (_) { logger.warn(`initial condition ${x.id} is ill-formed`)}
+      try{ initialValues.push(new VariableValue({ variables, ...v}).toGraphQL())} 
+      catch (_) { 
+          illformedInitialValues.push(v)
+          logger.warn(`initial condition ${x.id} is ill-formed`)}
   }
-  const usedObjects = flattenGoapModel( { variables, transitions: transitions.map(x => x.toGraphQL), goals, initialValues })
+  const gqlModel = model.toGraphQL()
+  const usedObjects = flattenGoapModel( { variables: gqlModel.variables, transitions: gqlModel.transitions, goals, initialValues })
+  const usedConditionIds = usedObjects.conditions.map( x => x.id)
+  const usedEffectIds = usedObjects.effects.map( x => x.id)
+  const usedVariableOrValueIds = usedObjects.variableOrValues.map( x => x.id)
+  
+  
+  const unusedConditions = (input.conditions||[]).map( x => ({...x, id:x.id? x.id: mkId(x), argument: x.argument.id})).filter( x => !usedConditionIds.includes(x.id) )
+  const unusedEffects = (input.effects||[]).map( x => ({...x, id:x.id? x.id: mkId(x), argument: x.argument.id})).filter( x => !usedEffectIds.includes(x.id) )
+  const unusedVariableOrValues = (input.variableOrValues || []).map( x => ({...x,id: x.id? x.id : `${x.variableId||`"${x.STRING}"`||x.INT||x.BOOLEAN||x.FLOAT}`})).filter( x => !usedVariableOrValueIds.includes(x.id))
+  
+
+  console.log(usedVariableOrValueIds)
   return {
     variables:[],
     transitions: [],
-    conditions: input.conditions.filter( x => !usedConditionIds.contains(x.id)).map( x => ({...x, argument: x.argument.id})),
-    effects: input.effects.filter( x => !usedEffectIds.contains(x.id)).map( x => ({...x, argument: x.argument.id})),
-    goals: input.goals.filter( x => !usedGoalIds.contains(x.id)).map( x => ({...x, argument: x.argument.id})),
-    initialValues: input.initialValues.filter( x => !usedInitialValuesIds.contains(x.id)),
-    variableOrValues: input.variableOrValues.filter( x => !usedVariableValueIds.contains(x.id))
+    conditions: illformedConditions.concat(unusedConditions),
+    effects: illformedEffects.concat(unusedEffects).map( x => ({...x, argument: x.argument.id})),
+    goals: illformedGoals.map( x => ({...x,argument: x.argument.id})),
+    initialValues: illformedInitialValues,
+    variableOrValues: unusedVariableOrValues
   }
 }  
 
@@ -460,6 +490,6 @@ module.exports = {
     updateVariableName: async (_, input) => updateVariableName(input),
     updateVariableType: async (_, input) => updateVariableType(input),
     removeVariable: async (_, input) => removeVariable(input),
-    garbageCollect: async (_, input) => garbageCollect(input)
+    findUnusedInstances: async (_, input) => findUnusedInstances(input)
 }
 

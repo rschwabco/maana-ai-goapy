@@ -4,7 +4,9 @@ type Info {
     description: String
 }
 
-type GoapProblem {
+"""A collection of deltas representing instances that must be added, 
+removed or updated."""
+type Deltas {
     id: ID!
     variables: [ Variable !]!
     transitions: [ FlattenedTransition !]!
@@ -266,16 +268,16 @@ type Query {
     createInitialValue( variables:[VariableInput!]!, id: ID!,  BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String):VariableValue!
 
     """Flatten GOAP Problem so that it can be stored using Q's crud operators"""
-    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): GoapProblem!
+    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): Deltas!
 
     """Rename a variable, changing all occurrences of the variable name in a goap problem."""
-    updateVariableName( id: ID!, newId: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
+    updateVariableName( id: ID!, newId: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):Deltas!
     
     """Change the type of a variable, and replace any values assigned or compared to it with the default values."""
-    updateVariableType( id: ID!, typeOf: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
+    updateVariableType( id: ID!, typeOf: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):Deltas!
 
     """Remove all occurences of a variable from a GOAP problem, replacing its occurence on the right hand side of comparisons or assignments with an approprate default"""
-    removeVariable( id: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):GoapProblem!
+    removeVariable( id: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):Deltas!
 
     """Given a collection of goap state variables, a goap state and a transition, return the result of applying the transition."""
     areGoalsSatisfied(variables:[VariableInput!]!, state:[VariableValueInput!]!, goals:[ConditionInput]):Boolean!
@@ -286,8 +288,8 @@ type Query {
     """Given a goap model and the current state, return the identifiers for the enabled transitions."""
     enabledTransitions(variables:[VariableInput!]!, state:[VariableValueInput!]!, transitions:[TransitionInput!]!):[ID!]!
 
-    """Given a goap problem, return a flattened goap problem containing the values that can be safely deleted"""
-    garbageCollect(variables:[VariableInput!]!, transitions:[TransitionInput!]!, state:[VariableOrValueInput!]!, goals:[ConditionInput!]!):GoapProblem!
+    """Given a goap problem, return a delta containing the values that can be safely deleted"""
+    findUnusedInstances(variables:[VariableInput!]!, transitions:[TransitionInput!]!, initialValues:[VariableOrValueInput!]!, goals:[ConditionInput!]!, conditions:[ConditionInput], effects:[EffectInput], variableOrValues:[VariableOrValueInput]):Deltas!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least

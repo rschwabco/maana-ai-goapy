@@ -36,7 +36,7 @@ class Condition {
 
   toGraphQL() {
     const lit = () => { 
-      const obj = { id: `${this.value}`}; obj[this.typeOf]=this.value; return obj 
+      const obj = { id: `${this.typeOf==="STRING"?`"${this.value}"`:this.value}`}; obj[this.typeOf]=this.value; return obj 
     } 
     const argument = (this.argumentId && this.argumentId !== null) 
       ? { id: `${this.argumentId}`, variableId: this.argumentId }
