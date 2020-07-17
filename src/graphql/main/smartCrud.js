@@ -128,15 +128,13 @@ function flattenGoapModel( input) {
     // Construct each of the goals.  The use of the Goals constructor ensures that the are
     // well formed.
     const goals = (input.goals || [])
-    .map(x =>
-        new Condition({
-        variables: model.variables,
-        ...x
-        }).toGraphQL()
+    .map(x => {
+        const z = new Condition({...x, variables: model.variables }).toGraphQL()
+        variableOrValues[z.argument.id] = z.argument
+        z.argument = z.argument.id
+        return z
+    }
     )
-    .map(x => { 
-        variableOrValues[argument.id] = x.argument
-        return ({...x, argument: x.argument.id }))
     return {
     id: `{${transitions.map(x => x.id).join(",")}}`,
     variables,
@@ -406,7 +404,6 @@ function removeVariable(input) {
   */
 function findUnusedInstances(input) {
   const model = new GoapModel({variables: input.variables })
-  console.log("MODEL ID",model.id)
   const variables = model.variables
   const transitions = model.transitions
   const illformedConditions = []
@@ -457,7 +454,6 @@ function findUnusedInstances(input) {
   const unusedVariableOrValues = (input.variableOrValues || []).map( x => ({...x,id: x.id? x.id : `${x.variableId||`"${x.STRING}"`||x.INT||x.BOOLEAN||x.FLOAT}`})).filter( x => !usedVariableOrValueIds.includes(x.id))
   
 
-  console.log(usedVariableOrValueIds)
   return {
     id:model.id,
     variables:[],
