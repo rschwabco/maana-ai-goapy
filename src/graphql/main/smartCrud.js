@@ -407,6 +407,7 @@ function removeVariable(input) {
   */
 function findUnusedInstances(input) {
   const model = new GoapModel({variables: input.variables })
+  console.log("MODEL ID",model.id)
   const variables = model.variables
   const transitions = model.transitions
   const illformedConditions = []

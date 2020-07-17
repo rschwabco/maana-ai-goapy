@@ -2,11 +2,13 @@
 const { Variable } = require('./Variable')
 const { Transition } = require('./Transition')
 const { logger } = require('./constants')
+const { v4: uuid } = require('uuid')
 
 class GoapModel {
   constructor(input) {
     const { variables, transitions } = input
     this.variables = {}
+    this.id = uuid()
     this.transitions = {}
     const ps = variables || []
     ps.map( variableInput => this.addVariable(variableInput))
@@ -16,9 +18,6 @@ class GoapModel {
     logger.info(`Created GOAP Model '${this.id}'`)
   }
 
-  get id() {
-    return this._id
-  }
 
   toGraphQL() {
     const json = { }
