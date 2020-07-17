@@ -11,6 +11,17 @@ import { objectFromInstance } from 'io.maana.shared/dist/KindDBSvc'
 import { WorldState } from './types/WorldState'
 import { Goal }  from './types/Goal'
 
+/** A helper founction for creating an ID for a condition, goal, variable or effect */
+function mkId( x) {
+    console.log(x)
+    const ifnotnull = (x,f) => x== null? null: f(x)
+    if (x.argument)
+      return `${x.variableId}${x.assignmentOperator||x.comparisonOperator}${mkId(x.argument)}`
+    else 
+      return `${x.variableId||ifnotnull(x.STRING,z=>`"${z}"`)||ifnotnull(x.INT,z=>`${z}`)||ifnotnull(x.BOOLEAN,z=>`${z}`)||ifnotnull(x.FLOAT,z=>`${z}`)}`
+}
+
+
 /** Smart constructor for single instances of the Variable type. */
 function createVariable(input) {
   const model = new GoapModel(input)
@@ -102,23 +113,26 @@ function flattenGoapModel( input) {
     const effects = {}
     const variableOrValues = {}
     for (const t of Object.values(model.transitions)) {
-    for (const c of Object.values(t.conditions)) {
+    for (const x of Object.values(t.conditions)) {
         // Append each condition of the current transition to the
         // map.   Append each condition's argument to the
         // variable or values map.
-        conditions[c.id] = c.toGraphQL()
-        const v = conditions[c.id].argument
+
+        const z = x.toGraphQL()
+        conditions[z.id] = z
+        const v = { ...z.argument, id: mkId(z.argument) }
         variableOrValues[v.id] = v
-        conditions[c.id].argument = v.id
+        z.argument = v.id
     }
-    for (const e of Object.values(t.effects)) {
+    for (const x of Object.values(t.effects)) {
         // Append each effect of the current transition to the
         // map.   Append each effect's argument to the
         // variable or values map.
-        effects[e.id] = e.toGraphQL()
-        const v = effects[e.id].argument
+        const z = x.toGraphQL()
+        effects[z.id] = z
+        const v = { ...z.argument, id: mkId(z.argument) }
         variableOrValues[v.id] = v
-        effects[e.id].argument = v.id
+        z.argument = v.id
     }
     }
     // convert any provided initial values to a worldstate object.  This will ensure that 
@@ -132,9 +146,12 @@ function flattenGoapModel( input) {
     const goals = (input.goals || [])
     .map(x => {
         const z = new Condition({...x, variables: model.variables }).toGraphQL()
-        variableOrValues[z.argument.id] = z.argument
-        z.argument = z.argument.id
+        const v = { ...z.argument, id: mkId(z.argument) }
+        variableOrValues[v.id] = v
+        z.argument = v.id
         return z
+        
+        
     }
     )
     return {
@@ -321,6 +338,7 @@ function updateVariableType(input) {
       return x
   }
 
+
   //Update the variables that occur in the transitions.
   //Variables may occur in both the effects and conditions, 
   //either on the left hand side of the operation, or as an
@@ -410,19 +428,18 @@ function findUnusedInstances(input) {
   const transitions = model.transitions
   const illformedConditions = []
   const illformedEffects = []
-  const mkId = x => `${x.variableId}${x.assignmentOperator||x.comparisonOperator}${x.argument.variableId||`"${x.argument.STRING}"`||x.argument.INT||x.argument.BOOLEAN||x.argument.FLOAT}`
   for (const t of input.transitions ) {
       model.addTransition({...t, conditions:[], effects:[]})
       for (const x of t.conditions) {
         try { model.transitions[t.id].addCondition({...x, variables}) } 
         catch (_) { 
-            illformedConditions.push({...x,id:x.id?x.id:mkId(x),})
+            illformedConditions.push({...x,id:x.id?x.id:mkId(x),argument:mkId(x.argument)})
             logger.warn(`Condition ${x.id} it is ill-formed`)}
       } 
       for (const x of t.effects) {
         try { model.transitions[t.id].addEffect({...x, variables}) } 
         catch (e) { 
-            illformedEffects.push({...x,id:x.id?x.id:mkId(x)})
+            illformedEffects.push({...x,id:x.id?x.id:mkId(x), argument:mkId(x.argument)})
             logger.warn( e.message)
             logger.warn(`Effects ${x.id} it is ill-formed`)}
       }
@@ -432,7 +449,7 @@ function findUnusedInstances(input) {
   for (const g of input.goals) {
       try{ goals.push( new Condition({variables, ...g}).toGraphQL())} 
       catch (_) { 
-          illformedGoals.push({...g,id:g.id?g.id:mkId(g),})
+          illformedGoals.push({...g,id:g.id?g.id:mkId(g),argument:mkId(g.argument)})
           logger.warn(`goal ${g.id} it is ill-formed`)
         }
   }
@@ -451,18 +468,18 @@ function findUnusedInstances(input) {
   const usedVariableOrValueIds = usedObjects.variableOrValues.map( x => x.id)
   
   
-  const unusedConditions = (input.conditions||[]).map( x => ({...x, id:x.id? x.id: mkId(x), argument: x.argument.id})).filter( x => !usedConditionIds.includes(x.id) )
-  const unusedEffects = (input.effects||[]).map( x => ({...x, id:x.id? x.id: mkId(x), argument: x.argument.id})).filter( x => !usedEffectIds.includes(x.id) )
-  const unusedVariableOrValues = (input.variableOrValues || []).map( x => ({...x,id: x.id? x.id : `${x.variableId||`"${x.STRING}"`||x.INT||x.BOOLEAN||x.FLOAT}`})).filter( x => !usedVariableOrValueIds.includes(x.id))
+  const unusedConditions = (input.conditions||[]).map( x => ({...x, id:x.id? x.id: mkId(x), argument:mkId(x.argument)})).filter( x => !usedConditionIds.includes(x.id) )
+  const unusedEffects = (input.effects||[]).map( x => ({...x, id:x.id? x.id: mkId(x), argument:mkId(x.argument)})).filter( x => !usedEffectIds.includes(x.id) )
+  const unusedVariableOrValues = (input.variableOrValues || []).map( x => ({...x,id: x.id? x.id : mkId(x)})).filter( x => !usedVariableOrValueIds.includes(x.id))
   
-
+  console.log(unusedVariableOrValues)
   return {
     id:model.id,
     variables:[],
     transitions: [],
     conditions: illformedConditions.concat(unusedConditions),
-    effects: illformedEffects.concat(unusedEffects).map( x => ({...x, argument: x.argument.id})),
-    goals: illformedGoals.map( x => ({...x,argument: x.argument.id})),
+    effects: illformedEffects.concat(unusedEffects),
+    goals: illformedGoals,
     initialValues: illformedInitialValues,
     variableOrValues: unusedVariableOrValues
   }
