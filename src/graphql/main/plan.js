@@ -229,7 +229,7 @@ function distanceTo( modelId, variables, source, target, no_weighting=false ){
   // worldstates.
   const makeArg = x => {
     const obj = {}
-    obj[x.typeOf] = x.Value
+    obj[x.typeOf] = x.value
     return obj
   }
   const objs = target.constructor.name === "Goal"
