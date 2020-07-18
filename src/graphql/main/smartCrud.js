@@ -7,9 +7,10 @@ import { Transition } from './types/Transition'
 import { Effect } from './types/Effect'
 import { Condition } from './types/Condition'
 import { VariableValue } from './types/VariableValue'
-import { objectFromInstance } from 'io.maana.shared/dist/KindDBSvc'
+import { objectFromInstance, FieldUUID } from 'io.maana.shared/dist/KindDBSvc'
 import { WorldState } from './types/WorldState'
 import { Goal } from './types/Goal'
+const { v4: uuid } = require('uuid')
 
 /** A helper founction for creating an ID for a condition, goal, variable or effect */
 function mkId(x) {
@@ -214,8 +215,8 @@ function createInitialValues(input) {
  * @param input.goals - the conditions that must be met by the action plan
  * @param input.id - the identifier of the variable being renamed
  * @param input.newId - the new identifier for the variable
- * @returns a GOAP problem structure suitable for use with the Q
- *   CRUD operations
+ * @returns a delta structure that contains the new or changed 
+ *   instances that should be written to the store.
  * NOTE: This function may throw an error if the variable does not
  * exist, the new name would conflict with an existing variable.
  */
@@ -234,33 +235,30 @@ function updateVariableName(input) {
     throw new Error(msg)
   }
   // Sanity check the inputs.
-  if (!model.variables[id]) {
-    throwErr(`The variable "${id}" does not exist`)
-  }
-  if (id === newId) {
-    throwErr(`The new and old names are identical`)
-  }
-  if (model.variables[newId]) {
-    throwErr(`The variable "${newId}" already exists`)
-  }
-
-  // If we made it here, then the model is well formed.   Rename the
-  // variable by adding a new variable with the given ID and then
-  // deleting the old variable.
-  model.addVariable({ ...model.variables[id], id: newId })
-  delete model.variables[id]
+  if (!model.variables[id]) throwErr(`The variable "${id}" does not exist`)
+  if (id === newId) throwErr(`The new and old names are identical`)
+  if (model.variables[newId]) throwErr(`The variable "${newId}" already exists`)
+  
+  // Initialize the variables for holding the delta values
+  const variables =[new Variable({...model.variables[id], id: newId })]
+  const transitions = []
+  const conditions = []
+  const effects = []
+  const goals = []
+  let variableOrValues = []
 
   // A helper function for performing the updates to the conditions,
   // goals, inital values and effects.
   const update = x => {
-    if (x.id === id) {
-      x.id = newId
-    }
-    if (x.variableId === id) {
-      x.variableId = newId
-    }
+    if (x.variableId === id) x.variableId = newId
     if (x.argument && x.argument.variableId === id) {
       x.argument.variableId = newId
+      variableOrValues = [{ id: newId, variableId: newId}]
+    }
+    if (x.argumentId === id ) {
+      console.log(x)
+      x.argumentId = newId
+      variableOrValues = [{ id: newId, variableId: newId}]
     }
     return x
   }
@@ -269,23 +267,66 @@ function updateVariableName(input) {
   // Variables may occur in both the effects and conditions,
   // either on the left hand side of the operation, or as an
   // argument on the right hand side.
-  const transitions = model.toGraphQL().transitions.map(t => {
-    const conditions = t.conditions.map(x => update(x))
-    const effects = t.effects.map(x => update(x))
-    return { ...t, conditions, effects }
-  })
+  for (const t of Object.values(model.transitions)) {
+    let dirty = false // a flag that indicates that the transition has changed.
+    const cids = [] // a collection of ids for conditions that occur in the transition
+    const eids = [] // a collection of ids for effects that occur in the transition
+    // iterate over the conditions of the transition. If the condition has 
+    // changed, then push it to the collection of deltas and mark the 
+    // transition as dirty.
+    for (const c of Object.values(t.conditions)) {
+      const cid = c.id
+      update(c)
+      if (c.id !== cid) {
+        dirty = true
+        conditions.push(c.toGraphQL())
+      }
+      cids.push(c.id)
+    }
+    // iterate over the effects of the transition. If the effect has
+    // changed, then push it to the collection of deltas and mark the
+    // transition as dirty.   NOTE: here we iterate over the ordered
+    // effects array so that the order of execution of the effects
+    // will be preserved in the eids.
+    for (const e of t.orderedEffects()) {
+      const eid = e.id
+      update(e)
+      if (e.id !== eid) {
+        dirty = true
+        effects.push(e.toGraphQL())
+      }
+      eids.push(e.id)
+    }
+    // If the transition is dirty, then push it to the deltas.
+    if (dirty === true) {
+      transitions.push({
+        ...t,
+        conditions: cids,
+        effects: eids
+      })
+    }
+  }
   // update the initial values
-  const initialValues = (input.initialValues || []).map(x => update(x))
+  const initialValues = (input.initialValues || []).filter(x => x.id === id ).map( x => ({...x,id:newId}))
   // update the goals.
-  const goals = (input.goals || []).map(x => update(x))
-  // finally, call flattenGoapModel.   This ensures that everything
-  // is in normal form and correctly indexed.
-  return flattenGoapModel({
-    variables: Object.values(model.variables),
-    transitions,
+  for (const x of (input.goals || [])) {
+    const g = new Condition({variables:model.variables,...x})
+    const gid = g.id
+    update(g)
+    if (g.id !== gid) goals.push(g.toGraphQL())
+  }
+  
+  // Assemble the deltas into a single object and return it to the caller.
+  return {
+    id: uuid(),
+    variables,
+    transitions: distinct(transitions),
+    conditions: distinct(conditions),
+    effects: distinct(effects),
     initialValues,
-    goals
-  })
+    goals,
+    variableOrValues: distinct(variableOrValues)
+  }
 }
 
 /** * Given a goap problem, update the type of one the variables
@@ -449,6 +490,14 @@ function removeVariable(input) {
   return flattenGoapModel({ variables, transitions, initialValues, goals })
 }
 
+/** given a collection of objects which have ids, return
+ * a list where the entries have distinct ids by removing
+ * keeping the first entry for any given identifier.
+ */
+function distinct(xs) {
+  return Object.values(Object.fromEntries(xs.reverse().map(x => [x.id, x])))
+}
+
 /** Given a goap problem description, return a goap problem containing
  * all the objects that can be safely removed from the problem without
  * changing the behavior
@@ -456,8 +505,6 @@ function removeVariable(input) {
 function findUnusedInstances(input) {
   const model = new GoapModel({ variables: input.variables })
   const variables = model.variables
-  const distinct = xs =>
-    Object.values(Object.fromEntries(xs.map(x => [x.id, x])))
   const illformedConditions = []
   const illformedEffects = []
   for (const t of input.transitions) {
