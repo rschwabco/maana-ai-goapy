@@ -279,7 +279,9 @@ function updateVariableName(input) {
       update(c)
       if (c.id !== cid) {
         dirty = true
-        conditions.push(c.toGraphQL())
+        const gql = c.toGraphQL()
+        gql.argument = gql.argument.id
+        conditions.push(gql)
       }
       cids.push(c.id)
     }
@@ -293,7 +295,9 @@ function updateVariableName(input) {
       update(e)
       if (e.id !== eid) {
         dirty = true
-        effects.push(e.toGraphQL())
+        const gql = e.toGraphQL()
+        gql.argument = gql.argument.id
+        effects.push(gql)
       }
       eids.push(e.id)
     }
@@ -313,7 +317,13 @@ function updateVariableName(input) {
     const g = new Condition({variables:model.variables,...x})
     const gid = g.id
     update(g)
-    if (g.id !== gid) goals.push(g.toGraphQL())
+    
+    if (g.id !== gid) {
+      const gql = g.toGraphQL()
+      gql.argument = gql.argument.id
+      goals.push(gql)
+    }
+
   }
   
   // Assemble the deltas into a single object and return it to the caller.
