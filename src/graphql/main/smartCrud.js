@@ -1,5 +1,3 @@
-import { gql } from 'apollo-server-express'
-import { SELF_ID } from '../../constants'
 import { logger, Types } from './types/constants'
 import { GoapModel } from './types/GoapModel'
 import { Variable } from './types/Variable'
@@ -7,9 +5,7 @@ import { Transition } from './types/Transition'
 import { Effect } from './types/Effect'
 import { Condition } from './types/Condition'
 import { VariableValue } from './types/VariableValue'
-import { objectFromInstance, FieldUUID } from 'io.maana.shared/dist/KindDBSvc'
 import { WorldState } from './types/WorldState'
-import { Goal } from './types/Goal'
 const { v4: uuid } = require('uuid')
 
 /** A helper founction for creating an ID for a condition, goal, variable or effect */
@@ -215,7 +211,7 @@ function createInitialValues(input) {
  * @param input.goals - the conditions that must be met by the action plan
  * @param input.id - the identifier of the variable being renamed
  * @param input.newId - the new identifier for the variable
- * @returns a delta structure that contains the new or changed 
+ * @returns a delta structure that contains the new or changed
  *   instances that should be written to the store.
  * NOTE: This function may throw an error if the variable does not
  * exist, the new name would conflict with an existing variable.
@@ -238,9 +234,9 @@ function updateVariableName(input) {
   if (!model.variables[id]) throwErr(`The variable "${id}" does not exist`)
   if (id === newId) throwErr(`The new and old names are identical`)
   if (model.variables[newId]) throwErr(`The variable "${newId}" already exists`)
-  
+
   // Initialize the variables for holding the delta values
-  const variables =[new Variable({...model.variables[id], id: newId })]
+  const variables = [new Variable({ ...model.variables[id], id: newId })]
   const transitions = []
   const conditions = []
   const effects = []
@@ -253,12 +249,11 @@ function updateVariableName(input) {
     if (x.variableId === id) x.variableId = newId
     if (x.argument && x.argument.variableId === id) {
       x.argument.variableId = newId
-      variableOrValues = [{ id: newId, variableId: newId}]
+      variableOrValues = [{ id: newId, variableId: newId }]
     }
-    if (x.argumentId === id ) {
-      console.log(x)
+    if (x.argumentId === id) {
       x.argumentId = newId
-      variableOrValues = [{ id: newId, variableId: newId}]
+      variableOrValues = [{ id: newId, variableId: newId }]
     }
     return x
   }
@@ -271,8 +266,8 @@ function updateVariableName(input) {
     let dirty = false // a flag that indicates that the transition has changed.
     const cids = [] // a collection of ids for conditions that occur in the transition
     const eids = [] // a collection of ids for effects that occur in the transition
-    // iterate over the conditions of the transition. If the condition has 
-    // changed, then push it to the collection of deltas and mark the 
+    // iterate over the conditions of the transition. If the condition has
+    // changed, then push it to the collection of deltas and mark the
     // transition as dirty.
     for (const c of Object.values(t.conditions)) {
       const cid = c.id
@@ -311,21 +306,22 @@ function updateVariableName(input) {
     }
   }
   // update the initial values
-  const initialValues = (input.initialValues || []).filter(x => x.id === id ).map( x => ({...x,id:newId}))
+  const initialValues = (input.initialValues || [])
+    .filter(x => x.id === id)
+    .map(x => ({ ...x, id: newId }))
   // update the goals.
-  for (const x of (input.goals || [])) {
-    const g = new Condition({variables:model.variables,...x})
+  for (const x of input.goals || []) {
+    const g = new Condition({ variables: model.variables, ...x })
     const gid = g.id
     update(g)
-    
+
     if (g.id !== gid) {
       const gql = g.toGraphQL()
       gql.argument = gql.argument.id
       goals.push(gql)
     }
-
   }
-  
+
   // Assemble the deltas into a single object and return it to the caller.
   return {
     id: uuid(),
@@ -372,21 +368,25 @@ function updateVariableType(input) {
   }
   const v = model.variables[id]
   // sanity check the inputs
-  if (!v) {
-    throwErr(`The variable "${id}" does not exist`)
-  }
-  if (!Types[typeOf]) {
-    throwErr(`The type "${typeOf} does not exist`)
-  }
-  if (v.typeOf === typeOf) {
-    throwErr(`The new and old types are the same`)
-  }
+  if (!v) throwErr(`The variable "${id}" does not exist`)
+  if (!Types[typeOf]) throwErr(`The type "${typeOf} does not exist`)
+  if (v.typeOf === typeOf) throwErr(`The new and old types are the same`)
   // If we got here, it is safe to change the type of the variable.
   // we store the default value and the old type for use in the
   // downstream transformations.
   const oldType = v.typeOf
-  v.typeOf = typeOf
-  const newValue = Types[typeOf].defaultValue
+  const variables = [new Variable({...v, typeOf}).toGraphQL()]
+  const transitions = []
+  const effects = []
+  const conditions = []
+  const goals = []
+  let variableOrValues = {}
+  const newVarValue = t => {
+    const obj = {}
+    obj[t] = Types[t].defaultValue
+    obj.id = mkId(obj)
+    return obj
+  }
   // this helper function is used to transform the uses of the
   // variable in assignments, goals, conditions and initial values
   // so that they are type consistent.
@@ -395,12 +395,16 @@ function updateVariableType(input) {
     // operator, replace the right hand side of the argument
     // with the default value of the new type.
     if (x.id === id || x.variableId === id) {
+      x.typeOf = typeOf
+      variableOrValues[typeOf] = newVarValue(typeOf)
       if (x.argument != null) {
         delete x.argument[oldType]
         delete x.argument.variableId
-        x.argument[typeOf] = newValue
+        x.argument.typeOf = typeOf
+        x.argument[typeOf] = Types[typeOf].defaultValue
       } else {
-        x[typeOf] = newValue
+        delete x.argumentId
+        x.value = Types[typeOf].defaultValue
       }
       // if it occurs on the right hand side of an operation,
       // replace the variable reference with the default value
@@ -408,7 +412,17 @@ function updateVariableType(input) {
     } else if (x.argument && x.argument.variableId === id) {
       delete x.argument.variableId
       x.argument[oldType] = Types[oldType].defaultValue
+      variableOrValues[oldType] = newVarValue(oldType)
+    } else if (x.argumentId === id) {
+      delete x.argumentId
+      x.typeOf = oldType
+      x.value = Types[oldType].defaultValue
+      variableOrValues[oldType] = newVarValue(oldType)
     }
+    if (x.assignmentOperator && !Types[typeOf].assignmentOperators[x.assignmentOperator])
+      x.assignmentOperator = '='
+    if (x.comparisonOperator && !Types[typeOf].comparisonOperators[x.comparisonOperator])
+      x.comparisonOperator = '=='
     return x
   }
 
@@ -416,23 +430,68 @@ function updateVariableType(input) {
   // Variables may occur in both the effects and conditions,
   // either on the left hand side of the operation, or as an
   // argument on the right hand side.
-  const transitions = model.toGraphQL().transitions.map(t => {
-    const conditions = t.conditions.map(x => update(x))
-    const effects = t.effects.map(x => update(x))
-    return { ...t, conditions, effects }
-  })
+  for (const t of Object.values(model.transitions)) {
+    let dirty = false
+    const cids = []
+    const eids = []
+    for (const c of Object.values(t.conditions)) {
+      const cid = c.id
+      update(c)
+      if (c.id !== cid) {
+        dirty = true
+        const gql = c.toGraphQL()
+        gql.argument = gql.argument.id
+        conditions.push(gql)
+      }
+      cids.push(c.id)
+    }
+    for (const e of Object.values(t.orderedEffects())) {
+      const eid = e.id
+      update(e)
+      if (e.id !== eid) {
+        dirty = true
+        const gql = e.toGraphQL()
+        gql.argument = gql.argument.id
+        conditions.push(gql)
+      }
+      eids.push(e.id)
+    }
+    if (dirty === true) {
+      transitions.push({
+        ...t,
+        conditions: cids,
+        effects: eids
+      })
+    }
+  }
   // update the initial values
-  const initialValues = (input.initialValues || []).map(x => update(x))
+  const initialValues = (input.initialValues || [])
+    .filter(x => x.id === id)
+    .map(x => ({...newVarValue(typeOf),id}))
   // update the goals
-  const goals = (input.goals || []).map(x => update(x))
+  for (const x of input.goals || []) {
+    const g = new Condition({ variables: model.variables, ...x })
+    const gid = g.id
+    update(g)
+
+    if (g.id !== gid) {
+      const gql = g.toGraphQL()
+      gql.argument = gql.argument.id
+      goals.push(gql)
+    }
+  }
   // finally, call flattenGoapModel.   This ensures that everything
   // is in normal form and correctly indexed.
-  return flattenGoapModel({
-    variables: Object.values(model.variables),
-    transitions,
+  return {
+    id: uuid(),
+    variables,
+    transitions: distinct(transitions),
+    conditions: distinct(conditions),
+    effects: distinct(effects),
     initialValues,
-    goals
-  })
+    goals,
+    variableOrValues: Object.values(variableOrValues)
+  }
 }
 
 /** * Given a goap problem, delete a variable.  Replace all references
