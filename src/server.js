@@ -8,39 +8,25 @@ import cors from 'cors'
 // routing engine
 import express from 'express'
 // Keep GraphQL stuff nicely factored
-import glue from 'schemaglue'
 import http from 'http'
 // GraphQL schema compilation
-import { makeExecutableSchema } from 'graphql-tools'
-import path from 'path'
 import { initAuthenticatedClient as authenticatedClient } from './client'
-import { resolver } from './graphql/main/resolvers'
+import { logicResolver } from './graphql/logic/resolvers'
+import { persistResolver } from './graphql/persist/resolvers'
 import {
   CKG_ENDPOINT_URL,
   HOSTNAME,
-  PORT,
-  PUBLICNAME,
-  SELF_ID
+  LOGICPORT,
+  BASE_ID,
+  LOGIC_SVC_ID,
+  PERSISTPORT,
+  PERSIST_SVC_ID,
+  PUBLICNAME
 } from './constants'
+import { importSchema } from 'graphql-import'
 
 // load .env into process.env.*
 require('dotenv').config()
-
-const options = {
-  mode: 'js' // default
-}
-const schemaPath = path.join(
-  '.',
-  `${__dirname}`.replace(process.cwd(), ''),
-  'graphql/'
-)
-const glueRes = glue(schemaPath, options)
-
-// Compile schema
-export const schema = makeExecutableSchema({
-  typeDefs: glueRes.schema,
-  resolvers: glueRes.resolver
-})
 
 function initApp() {
   const app = express()
@@ -52,7 +38,7 @@ function initApp() {
   app.options('*', cors()) // enable pre-flight for all routes
 
   app.get('/', (req, res) => {
-    res.send(`${SELF_ID}\n`)
+    res.send(`${BASE_ID}\n`)
   })
 
   return app
@@ -60,7 +46,7 @@ function initApp() {
 
 const defaultSocketMiddleware = (connectionParams, webSocket) => {
   return new Promise(function(resolve, reject) {
-    log(SELF_ID).warn(
+    log(BASE_ID).warn(
       'Socket Authentication is disabled. This should not run in production.'
     )
     resolve()
@@ -70,21 +56,27 @@ const defaultSocketMiddleware = (connectionParams, webSocket) => {
 const initServer = async options => {
   // eslint-disable-next-line no-unused-vars
   const { httpAuthMiddleware, socketAuthMiddleware } = options
-  initMetrics(SELF_ID.replace(/[\W_]+/g, ''))
+  initMetrics(BASE_ID.replace(/[\W_]+/g, ''))
   // Create OIDC token URL for the specified auth provider (default to auth0).
   const client = await authenticatedClient(CKG_ENDPOINT_URL)
 
   const app = initApp()
+  const app2 = initApp()
   const httpServer = http.createServer(app)
-  httpServer.listen({ port: PORT }, async () => {
-    log(SELF_ID).info(
-      `listening on ${print.external(`http://${HOSTNAME}:${PORT}/graphql`)}`
+  const httpServer2 = http.createServer(app2)
+  httpServer.listen({ port: LOGICPORT }, async () => {
+    log(LOGIC_SVC_ID).info(
+      `listening on ${print.external(`http://${PUBLICNAME}:${LOGICPORT}/graphql`)}`
     )
   })
-
-  const server = new ApolloServer({
-    resolvers: resolver,
-    schema,
+  httpServer2.listen({ port: PERSISTPORT }, async () => {
+    log(PERSIST_SVC_ID).info(
+      `listening on ${print.external(`http://${PUBLICNAME}:${PERSISTPORT}/graphql`)}`
+    )
+  })
+  const logicServer = new ApolloServer({
+    resolvers: logicResolver,
+    typeDefs: importSchema("./src/graphql/logic/schema.gql"),
     subscriptions: {
       onConnect: socketAuthMiddleware || defaultSocketMiddleware
     },
@@ -94,13 +86,32 @@ const initServer = async options => {
       }
     }
   })
-  server.applyMiddleware({
+  const persistServer = new ApolloServer({
+    resolvers: persistResolver,
+    typeDefs: importSchema("./src/graphql/persist/schema.gql"),
+    subscriptions: {
+      onConnect: socketAuthMiddleware || defaultSocketMiddleware
+    },
+    context: async ({ req }) => {
+      return {
+        client
+      }
+    }
+  }) 
+  logicServer.applyMiddleware({
     app,
     bodyParserConfig: {
       limit: '20mb'
     }
   })
-  server.installSubscriptionHandlers(httpServer)
+  persistServer.applyMiddleware({
+    app: app2,
+    bodyParserConfig: {
+      limit: '20mb'
+    }
+  })
+  logicServer.installSubscriptionHandlers(httpServer)
+  persistServer.installSubscriptionHandlers(httpServer2)
 }
 
 export default initServer

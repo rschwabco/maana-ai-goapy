@@ -2,6 +2,8 @@
 import { BuildGraphqlClient } from 'io.maana.shared'
 import querystring from 'querystring'
 import request from 'request-promise-native'
+import { logger } from './graphql/common/types/constants'
+import { gql } from 'apollo-server-express'
 
 // load .env into process.env.*
 require('dotenv').config()
@@ -64,5 +66,22 @@ export async function initAuthenticatedClient(url) {
   const token = await requestAuthToken()
   return clientSetup(token, url)
 }
+
+
+export async function initAuthenticatedGraphQLClient(url) {
+  const client = await initAuthenticatedClient(url)
+  try { 
+    const query = gql("query {__schema{ queryType{ name }}}")
+    const result = await client.query({ query })
+    logger.info(`lieveness test returns ${result}`)
+    if (result != null) return client
+    throw new Error('null query result')
+  } catch (e) {
+    logger.error(e.message)
+    logger.error(`Could not initialize connection to ${url}`)
+    return null
+  }
+}
+
 
 export default initAuthenticatedClient

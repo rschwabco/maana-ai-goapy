@@ -1,0 +1,177 @@
+type Info {
+    id: ID!
+    name: String!
+    description: String
+}
+
+
+"""
+A variable represents an observable of the worldstate.  
+"""
+input VariableInput {
+  id: ID!
+  typeOf: String!
+  description: String
+  weight: Float
+}
+
+"""
+A 'union' type representing a scalar value that can be 
+assigned to a variable.  Exactly one of the optional fields
+must be provided.
+"""
+input VariableValueInput {
+    id: ID
+    variableId: ID!
+    STRING: String
+    FLOAT: Float
+    INT: Int
+    BOOLEAN: Boolean
+}
+
+"""
+A 'union' type representing a scalar value or variable 
+that can occur on the right hand side of a effect or 
+constraint.
+"""
+input VariableOrValueInput {
+    id: ID
+    variableId: ID
+    STRING: String
+    FLOAT: Float 
+    INT: Int 
+    BOOLEAN: Boolean
+}
+
+"""
+A 'union' type representing the inital value of a variable 
+"""
+input InitialValueInput {
+    id: ID
+    variableId: ID!
+    STRING: String
+    FLOAT: Float 
+    INT: Int 
+    BOOLEAN: Boolean
+}
+
+
+
+"""
+An effect is a reassignment of the value associated 
+with a variable.   Depending on the type of the variable, 
+reassignment may perform logical or arithmetic operations
+to combine the previous value with the provided argument.
+To be well formed, the variable, operator and argument 
+must all have the same type.
+"""
+input EffectInput {
+    id: ID
+    variableId: ID!
+    assignmentOperator: ID!
+    argument: VariableOrValueInput!
+    order: Int
+}
+
+"""
+A condition is a logical expression that must be satisfied
+in order for a transition to be enabled.   To be well formed
+the variable, operator and argument must all have the same
+type.
+"""
+input ConditionInput {
+    id: ID 
+    variableId: ID!
+    comparisonOperator: ID!
+    argument: VariableOrValueInput!
+}
+
+"""
+A goal is a logical expression that must be satisfied
+in order for a goap model to be completed.   To be well formed
+the variable, operator and argument must all have the same
+type.
+"""
+input GoalInput {
+    id: ID 
+    variableId: ID!
+    comparisonOperator: ID!
+    argument: VariableOrValueInput!
+}
+
+"""
+A transition is a conditional behavior, which may occur
+whenever its all its conditions are satisfied by the 
+worldstate.   For the purpose of planning, firing the 
+transition is assumed to produce a number of effects which 
+modify the worldstate.   Optionally it may produce an 
+action, which will be returned as part of the optimal 
+action plan.
+"""
+input TransitionInput {
+    "A globally unique identifier for the transaction"
+    id: ID!
+    "An optional description of the transaction"
+    description: String
+    """
+    A collection of conditions that must be satisfied by
+    the worldstate in order for the transaction to be 
+    enabled. 
+    """
+    conditions: [ ConditionInput! ]!
+    """
+    The identifier for an action that should be added to 
+    the action plan as a result of the transaction firing.
+    """
+    action: ID
+    """
+    A collection of mutations to perform on the worldstate
+    variables whenever the transaction fires.
+    """
+    effects: [ EffectInput! ]!
+    """
+    The cost basis of the transaction used for planning 
+    purposes. 
+    """
+    cost: Float!
+}
+
+type Query {
+    info: Info!
+
+    """
+    What types can be assigned to variables?
+    """
+    variableTypes: [ID!]!
+
+    """
+    Given a type, what are the assignment operators that are defined for variables of that type?
+    """
+    assignmentOperators( variableType: ID! ): [ID!]!
+
+    """
+    Given a type, what are the comparison operations that are defined for variables of that type?
+    """
+    comparisonOperators( variableType: ID! ): [ID!]!
+
+    "Test if a workspace contains a goap model"
+    isGoapWorkspace( workspaceId: ID! ): Boolean!
+}
+
+type Mutation {
+    """Given a workspace identifier and a collection of variables, and optionally collections of 
+    transitions, goals and initial values, persist the collections to workspace kinds.   
+    If a collection is provided, then this function will also remove any unmentioned instances
+    of that kind from the workspace.   If all given collections cannot be persisted, then
+    an attempt will be made to restore the workspace to its original state."""
+    persist( workspaceId: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], goals: [GoalInput], initialValues:[InitialValueInput]):Boolean!
+    
+    renameVariable( workspaceId: ID!, oldId: ID!, newId: ID!): Boolean!
+    retypeVariable( workspaceId: ID!, id: ID!, typeOf: ID!): Boolean!
+    
+    removeVariable( workspaceId: ID!, id: ID!): Boolean!
+    removeTransition(workspaceId: ID!, id: ID!): Boolean!
+    removeGoal(workspaceId: ID!, id: ID!): Boolean!
+    removeInitialValue(workspaceId: ID!, id: ID!): Boolean!
+}
+

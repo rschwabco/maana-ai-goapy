@@ -4,41 +4,6 @@ type Info {
     description: String
 }
 
-"""A collection of deltas representing instances that must be added, 
-removed or updated."""
-type Deltas {
-    id: ID!
-    variables: [ Variable !]!
-    transitions: [ FlattenedTransition !]!
-    effects: [ FlattenedEffect !]!
-    conditions: [ FlattenedCondition !]!
-    variableOrValues: [ VariableOrValue !]!
-    initialValues: [ VariableValue !]!
-    goals: [ FlattenedCondition !]!
-}
-
-type FlattenedTransition {
-  id: ID!
-  description: String
-  conditions: [ID!]!
-  action: ID
-  effects: [ID!]!
-  cost: Float!
-}
-
-type FlattenedCondition {
-  id: ID!
-  variableId: ID!
-  comparisonOperator: ID!
-  argument: ID!
-}
-
-type FlattenedEffect {
-  id: ID!
-  variableId: ID!
-  assignmentOperator: ID!
-  argument: ID!
-}
 
 """
 A variable represents an observable of the worldstate.  
@@ -79,6 +44,7 @@ must be provided.
 """
 type VariableValue {
     id: ID!
+    variableId: ID!
     STRING: String
     FLOAT: Float
     INT: Int
@@ -86,7 +52,8 @@ type VariableValue {
 }
 
 input VariableValueInput {
-    id: ID!
+    id: ID
+    variableId: ID!
     STRING: String
     FLOAT: Float
     INT: Int
@@ -221,63 +188,6 @@ type ActionPlan {
 type Query {
     info: Info!
 
-    """
-    What types can be assigned to variables?
-    """
-    variableTypes: [ID!]!
-
-    """
-    Given a type, what are the assignment operators that are defined for variables of that type?
-    """
-    assignmentOperators( variableType: ID! ): [ID!]!
-
-    """
-    Given a type, what are the comparison operations that are defined for variables of that type?
-    """
-    comparisonOperators( variableType: ID! ): [ID!]!
-
-    """Smart constructor for a single variable.   Will return a value only if it is well formed."""
-    createVariable( variables: [VariableInput!]!, id: String!, description: String, typeOf: ID!, weight: Float ): Variable
-    
-    """Smart constructor for a multiple variables.   Will return values only if all are well formed."""
-    createVariables( variables: [VariableInput!]!, newVariables:[VariableInput!]! ): [Variable!]!
-
-    """Smart constructor for a single transition.   Will return a value only if it is well formed."""
-    createTransition( variables: [VariableInput!]!, transitions:[TransitionInput], id: String!, description: String, conditions:[ ConditionInput ], effects:[ EffectInput ], action:ID, cost: Float ): Transition
-
-    """Smart constructor for an array of transitions.   Will return a value only if it is well formed."""
-    createTransitions( variables: [VariableInput!]!, transitions:[TransitionInput], newTransitions:[TransitionInput!]! ): [Transition!]
-    
-    """Smart constructor for an effect.   Will return a value only if it is well formed."""
-    createEffect( variables:[VariableInput!]!, variableId:String!, operator:ID!, argument: VariableOrValueInput! ): Effect
-
-    """Smart constructor for a single condition.   Will return a value only if it is well formed."""
-    createCondition( variables:[VariableInput!]!, variableId:String!, operator:ID!, argument: VariableOrValueInput! ): Condition
-
-    """Smart constructor for a variable value.  Will return a value only if it is well formed."""
-    createVariableValue( variables:[VariableInput!]!, id: String!, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): VariableValue
-
-    """Smart constructor for a variable or value.  Will return a value only if it is well formed."""
-    createVariableOrValue( variables:[VariableInput!]!, id: String!, variableId: ID, BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String): VariableOrValue
-
-    """Smart constructor for initial values.   Will verify each of the provided variable values, remove invalid values, and create default values for any missing variables. """
-    createInitialValues( variables:[VariableInput!]!, variableValues:[VariableValueInput]):[VariableValue!]!
-
-    """Smart constructor for a single initial value.   Will verify if the variable exists, and the value is the correct type. """
-    createInitialValue( variables:[VariableInput!]!, id: ID!,  BOOLEAN: Boolean, INT: Int, FLOAT: Float, STRING: String):VariableValue!
-
-    """Flatten GOAP Problem so that it can be stored using Q's crud operators"""
-    flattenGoapModel( variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ ConditionInput] ): Deltas!
-
-    """Rename a variable, changing all occurrences of the variable name in a goap problem."""
-    updateVariableName( id: ID!, newId: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):Deltas!
-    
-    """Change the type of a variable, and replace any values assigned or compared to it with the default values."""
-    updateVariableType( id: ID!, typeOf: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):Deltas!
-
-    """Remove all occurences of a variable from a GOAP problem, replacing its occurence on the right hand side of comparisons or assignments with an approprate default"""
-    removeVariable( id: ID!, variables:[VariableInput!]!, transitions: [TransitionInput], initialValues:[VariableValueInput], goals:[ConditionInput]):Deltas!
-
     """Given a collection of goap state variables, a goap state and a transition, return the result of applying the transition."""
     areGoalsSatisfied(variables:[VariableInput!]!, state:[VariableValueInput!]!, goals:[ConditionInput]):Boolean!
     
@@ -286,9 +196,6 @@ type Query {
 
     """Given a goap model and the current state, return the identifiers for the enabled transitions."""
     enabledTransitions(variables:[VariableInput!]!, state:[VariableValueInput!]!, transitions:[TransitionInput!]!):[ID!]!
-
-    """Given a goap problem, return a delta containing the values that can be safely deleted"""
-    findUnusedInstances(variables:[VariableInput!]!, transitions:[TransitionInput!]!, initialValues:[VariableOrValueInput!]!, goals:[ConditionInput!]!, conditions:[ConditionInput], effects:[EffectInput], variableOrValues:[VariableOrValueInput]):Deltas!
 
     """
     Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least

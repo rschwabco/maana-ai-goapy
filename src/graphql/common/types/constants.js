@@ -2,12 +2,14 @@ const { log } = require('io.maana.shared')
 
 function assignEqual(prop, value) {
   prop.operator = '='
-  prop.value = value
+  prop.setValue(value)
 }
 
 const MIN_PROPERTY_DISTANCE = 0.00001
 const ITERATION_LIMIT = 100
-const logger = log(process.env.SERVICE_ID || 'maana-service')
+const logiclogger = log(`${process.env.SERVICE_ID}-logic` || 'maana-service')
+const persistlogger = log(`${process.env.SERVICE_ID}-persist` || 'maana-service')
+const logger = log(`${process.env}-persist` || 'maana-service')
 
 function equalityDistance(lhs, rhs) { return lhs === rhs ? 0.0 : 1.0 }
 function disequalityDistance(lhs, rhs) { return lhs !== rhs ? 0.0 : 1.0 }
@@ -24,7 +26,7 @@ function totalOrderDistance(op) {
 
 function assignOp(op) {
   return function (prop, value) {
-    prop.value = op(prop.value, value)
+    prop.setValue(op(prop.value, value))
   }
 }
 
@@ -32,7 +34,9 @@ function assignOp(op) {
 module.exports = {
   MIN_PROPERTY_DISTANCE,
   ITERATION_LIMIT,
+  logiclogger,
   logger,
+  persistlogger,
   Types: {
     "BOOLEAN": {
       defaultValue: false,

@@ -1,21 +1,26 @@
 /* eslint-disable prettier/prettier */
 const { Variable } = require('./Variable')
 const { Transition } = require('./Transition')
+import { Behavior } from './Behavior'
 const { logger } = require('./constants')
 const { v4: uuid } = require('uuid')
 
 class GoapModel {
   constructor(input) {
-    const { variables, transitions } = input
+    const { variables, transitions, behaviors, id } = input
+    this.id = id
     this.variables = {}
     this.id = uuid()
     this.transitions = {}
+    this.behaviors = {}
     const ps = variables || []
     ps.map( variableInput => this.addVariable(variableInput))
     const ts = transitions || []
     ts.map( transitionInput => this.addTransition({...transitionInput, variables: this.variables})
     )
-    logger.info(`Created GOAP Model '${this.id}'`)
+    const bs = behaviors || [] 
+    bs.map( behaviorInput => this.addBehavior({... behaviorInput}))
+    //logger.info(`Created GOAP Model '${this.id}'`)
   }
 
 
@@ -41,14 +46,14 @@ class GoapModel {
         } catch (e) {
           throw new Error(e.message)
         }
-        logger.info(`Updated variable '${id}' in GOAP model.`)
+        //logger.info(`Updated variable '${id}' in GOAP model.`)
     } else {
         try {
             this.variables[id] = new Variable({...variableInput})
           } catch (e) {
             throw new Error(e.message)
         }
-        logger.info(`Added variable '${id}' to GOAP model.`)
+        //logger.info(`Added variable '${id}' to GOAP model.`)
     }
   }
 
@@ -63,7 +68,20 @@ class GoapModel {
     } catch (e) {
       throw new Error(e.message)
     }
-    logger.info(`${action==="add"?"Added":"Updated"} transition '${id}' in GOAP model.`)
+    //logger.info(`${action==="add"?"Added":"Updated"} transition '${id}' in GOAP model.`)
+  }
+
+  addBehavior ( behaviorInput ) {
+    const id = behaviorInput.id
+    const action = this.behaviors[id] != null ? "update" : "add"
+    try { 
+      const existingB = this.behaviors[id] 
+      const x = existingB ? existingB.toGraphQL() : {}
+      this.behaviors[id] = new Behavior({...x,...behaviorInput, allTransitions: this.transitions })
+    } catch (e) {
+        throw new Error(e.message)
+    }
+    //logger.info(`${action==="add"?"Added":"Updated"} behavior '${id}' in GOAP model.`)
   }
 }
 

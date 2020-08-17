@@ -60,7 +60,7 @@ class Effect {
     this.typeOf = variable.typeOf
     this.variableId = variableId
     this.assignmentOperator = assignmentOperator
-    logger.info(`created effect ${this.id}`)
+    //logger.info(`created effect ${this.id}`)
   }
 
   toGraphQL() {
