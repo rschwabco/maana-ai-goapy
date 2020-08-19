@@ -1,6 +1,5 @@
 import { persistlogger, logger } from '../common/types/constants'
 import { gql } from 'apollo-server-express'
-import { print } from 'graphql/language/printer'
 import { CKG_ENDPOINT_URL } from '../../constants'
 import { initAuthenticatedClient } from '../../client'
 
