@@ -1,25 +1,24 @@
 import { gql } from 'apollo-server-express'
 
 import { SELF_ID } from '../../constants'
-import { logger, Types } from './types/constants'
-import { GoapModel } from './types/GoapModel'
-import { Variable } from './types/Variable'
-import { Transition } from './types/Transition'
-import { Effect } from './types/Effect'
-import { Condition } from './types/Condition'
-import { VariableValue } from './types/VariableValue'
+import { logger } from '../common/types/constants'
+import { GoapModel } from '../common/types/GoapModel'
+import { Variable } from '../common/types/Variable'
+import { Transition } from '../common/types/Transition'
+import { Effect } from '../common/types/Effect'
+import { Condition } from '../common/types/Condition'
+import { VariableValue } from '../common/types/VariableValue'
 import { objectFromInstance } from 'io.maana.shared/dist/KindDBSvc'
-import { WorldState } from './types/WorldState'
-import { Goal }  from './types/Goal'
+import { WorldState } from '../common/types/WorldState'
+import { Goal }  from '../common/types/Goal'
 import { areGoalsSatisfied, singleStep, enabledTransitions }  from './plan'
-import SmartCrud from './smartCrud'
 const workerFarm = require('worker-farm')
 
 const workers = workerFarm({ maxRetries: 0 }, require.resolve('./plan'),['generateActionPlan'])
 
 require('dotenv').config()
 
-export const resolver = {
+export const logicResolver = {
   Query: {
     info: async (_, args, ctxt) => {
       let remoteId = SELF_ID
@@ -64,7 +63,6 @@ export const resolver = {
         })
       })
     },
-    ...SmartCrud,
     enabledTransitions,
     areGoalsSatisfied,
     singleStep

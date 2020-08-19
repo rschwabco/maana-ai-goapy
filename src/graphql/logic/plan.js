@@ -5,14 +5,14 @@
 // DESCRIPTION: An implementation of a Goal Oriented Action Planner
 // ===========================================================================*/
 var SortedArrayMap = require("collections/sorted-array-map");
-const { PlannerNode } = require("./types/PlannerNode")
-const { VariableValue } = require("./types/VariableValue")
-const { WorldState } = require("./types/WorldState")
-const { Goal } = require("./types/Goal")
-const { GoapModel } = require("./types/GoapModel")
-const { Condition } = require("./types/Condition")
+const { PlannerNode } = require("../common/types/PlannerNode")
+const { VariableValue } = require("../common/types/VariableValue")
+const { WorldState } = require("../common/types/WorldState")
+const { Goal } = require("../common/types/Goal")
+const { GoapModel } = require("../common/types/GoapModel")
+const { Condition } = require("../common/types/Condition")
 const { v4: uuid } = require("uuid")
-const { logger, Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('./types/constants');
+const { logger, Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('../common/types/constants');
 
 function throwErr(id, reason){
   const msg = `Planning for ${id} failed.  ${reason}`
@@ -185,7 +185,7 @@ function isEnabled(modelId, variables, transition, state) {
     
     const { weight } = variables[ condition.variableId ]
     if (condition.argumentId && condition.argumentId !== "") {
-      const arg = {...TryGetValue(state, condition.argumentId,new VariableValue({variables, id:condition.argumentId})), comparisonOperator: condition.comparisonOperator || "=="}
+      const arg = {...TryGetValue(state, condition.argumentId,new VariableValue({variables, variableId:condition.argumentId})), comparisonOperator: condition.comparisonOperator || "=="}
       const dist = distanceToVariable( currentProp, arg, weight, true )
       if (dist > MIN_PROPERTY_DISTANCE) {
         logger.info(`Transition ${transition.id} is DISABLED`)
@@ -234,16 +234,16 @@ function distanceTo( modelId, variables, source, target, no_weighting=false ){
   }
   const objs = target.constructor.name === "Goal"
     ? Object.values(target.conditions)
-    : Object.values(target).map( x => new Condition({variables, variableId: x.id, comparisonOperator:"==", argument: makeArg(x) }))
+    : Object.values(target).map( x => new Condition({variables, variableId: x.variableId, comparisonOperator:"==", argument: makeArg(x) }))
   for (const v of objs) {
     // get the corresponding variable from the current state
-    const prop = TryGetValue( source, v.variableId, new VariableValue({variables, id: v.variableId }) )
+    const prop = TryGetValue( source, v.variableId, new VariableValue({variables, variableId: v.variableId }) )
     if (prop == null) 
       throwErr(modelId,'Cannot compute distance between worldstates.'
         +`The target world state uses variable ${v.variableId} that is not defined`)
-    const {weight} = variables[prop.id]
+    const {weight} = variables[prop.variableId]
     if (v.argumentId) {
-      const temp = { ... TryGetValue( source, v.argumentId, new VariableValue({variables, id: v.argumentId }) )}
+      const temp = { ... TryGetValue( source, v.argumentId, new VariableValue({variables, variableId: v.argumentId }) )}
       if (temp == null) 
         throwErr(modelId, 'Cannot compute distance between worldstates.'
         +`The goal state uses variable ${v.argumentId} that is not defined`)
@@ -325,8 +325,8 @@ function applyTransition(variables, transition, current) {
  */
 function applyEffectToWorldstate( variables, worldstate, effect ) {
   let {variableId, argumentId, typeOf } = effect
-  let variable = TryGetValue( worldstate, variableId, new VariableValue({variables, id:variableId} /* use default value */) )
-  let rhs = TryGetValue( worldstate, argumentId, new VariableValue({variables, id:variableId ,typeOf,value: (effect.value == null) ? Types[typeOf].defaultValue : effect.value}))
+  let variable = TryGetValue( worldstate, variableId, new VariableValue({variables, variableId:variableId} /* use default value */) )
+  let rhs = TryGetValue( worldstate, argumentId, new VariableValue({variables, variableId:variableId ,typeOf,value: (effect.value == null) ? Types[typeOf].defaultValue : effect.value}))
   ApplyVariableEffect( variable, effect.assignmentOperator, rhs )
 }
 
