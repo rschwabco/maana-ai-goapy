@@ -10,8 +10,8 @@
   "scripts": {
     "docker-build": "if [ -z \"$(git status --porcelain)\" ]; then docker build -t maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\" .; else ECHO \"docker repository is not pristine\"; fi",
     "docker-run": "docker run -p 8050:8050 -p 8051:8051 --env-file .env -ti maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\"",
-    "docker-push": "if [ -z \"$(git status --porcelain)\" ]; then docker tag maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\" services.azurecr.io/maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\"; docker push services.azurecr.io/maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\"; else ECHO \"git repository is not pristine\"; fi",
-    "docker-release": "if [ -z \"$(git status --porcelain)\" ]; then docker tag maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\" services.azurecr.io/maana-ai-goap-logic:$npm_package_version; docker push services.azurecr.io/maana-ai-goap-logic:$npm_package_version; else ECHO \"git repository is not pristine\"; fi",
+    "docker-push": "if [ -z \"$(git status --porcelain)\" ]; then docker tag maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\" docker.pkg.github.com/maana-io/goap-deployment/maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\"; docker push docker.pkg.github.com/maana-io/goap-deployment/maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\"; else ECHO \"git repository is not pristine\"; fi",
+    "docker-release": "if [ -z \"$(git status --porcelain)\" ]; then docker tag maana-ai-goap-logic:\"$(git rev-parse --short HEAD)\" docker.pkg.github.com/maana-io/goap-deployment/maana-ai-goap-logic:$npm_package_version; docker push docker.pkg.github.com/maana-io/goap-deployment/maana-ai-goap-logic:$npm_package_version; else ECHO \"git repository is not pristine\"; fi",
     "precommit": "lint-staged",
     "prettier": "./node_modules/.bin/prettier --write \"src/**/*.{js,jsx}\"",
     "start": "babel-node ./src/start.dev.js",
