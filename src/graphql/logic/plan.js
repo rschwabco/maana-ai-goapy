@@ -12,7 +12,9 @@ const { Goal } = require("../common/types/Goal")
 const { GoapModel } = require("../common/types/GoapModel")
 const { Condition } = require("../common/types/Condition")
 const { v4: uuid } = require("uuid")
-const { logger, Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('../common/types/constants');
+const { logiclogger, Types, MIN_PROPERTY_DISTANCE, ITERATION_LIMIT } = require('../common/types/constants');
+
+const logger = logiclogger
 
 function throwErr(id, reason){
   const msg = `Planning for ${id} failed.  ${reason}`
@@ -34,7 +36,7 @@ function generatePlan( input ) {
   const goal = new Goal({ variables, conditions: goalinput })
   const nonnullTransitions = Object.values(transitions)
   const initialDistance = distanceTo(planId, variables, worldstate, goal )
-  visitedStates[initialState.id] = true
+  // visitedStates[initialState.id] = true
   let _id = 0
   const nextId = () => { _id++; return _id }
            
@@ -59,27 +61,26 @@ function generatePlan( input ) {
   
   if( initialDistance < MIN_PROPERTY_DISTANCE ) { 
     logger.warn("The current world state coincides with the goal world state");
-    return mkActionPlan( planId, startNode, worldstate, worldstate, closedNodes)
+    return { id: planId, transitions:[], actions:[], initialState: initialState.toGraphQL(), finalState:initialState.toGraphQL(), totalCost: 0, totalSteps: 0,  status:"SOLVED"}
   }
   
-
   while( openNodes.length > 0 ) {
     currentIteration += 1
     logger.info(`PLANNING ITERATION ${currentIteration} for ${planId}`)
     //Check and update iterations count
     if ( currentIteration >= ITERATION_LIMIT ) {
-      logger.warn(planId, "Planning generations exceded max iteration.  Returning partial solution")
-      return mkActionPlan(planId, currentNode, initialState, currentNode.resultantState, closedNodes, "FAILED TO CONVERGE")
+      logger.warn(planId, "Planning generations exceded max iteration.  Returning empty solution")
+      return { id: planId, transitions:[], actions:[], initialState: initialState.toGraphQL(), finalState:[], totalCost: -1, totalSteps: -1,  status:"FAILED - DID NOT CONVERGE"}
     }
 
-    
+
     //Select the lowest cost node from the list of openNodes
     var currentNode = closeNode(openNodes, closedNodes);
     
     //Check if the resultant world state of the current node is the goal world state
     if (distanceTo(planId, variables, currentNode.resultantState,goal) < MIN_PROPERTY_DISTANCE)  {
       logger.info(`Action plan for '${planId} completed in ${currentIteration} iterations.'`)
-      return mkActionPlan( planId, currentNode, initialState, currentNode.resultantState, closedNodes, "SOLVED")
+      return mkActionPlan( planId, currentNode, initialState, initialState, closedNodes, "SOLVED")
     }
     
     //Iterate over all the the enabled transitions transitions
@@ -122,7 +123,7 @@ function generatePlan( input ) {
   } 
   //In no plan found case we return an empty plan 
   logger.warn(`There is no action plan for '${planId} for the given initial state and goal.'`)
-  return null;
+  return { id: planId, transitions:[], actions:[], initialState: initialState.toGraphQL(), finalState:[], totalCost: -1, totalSteps: -1,  status:"FAILED - GOAL IS UNSATISFIABLE"}
 }
 
 // Add a new node to the _open node collection.   If the key already exists
@@ -142,16 +143,15 @@ function closeNode( openNodes, closedNodes ) { // PlannerNode_GS
   //Get open nodes listed with the cheapest cost
   let cheapestNodes = openNodes.min();
   //pick a random node from those that are cheapest
-  const idx = Math.floor(Math.random(cheapestNodes.length))
-  let target = cheapestNodes[idx];
+  let target = cheapestNodes.pop()
   //Store the last cheap node in the closed list
   closedNodes.set(target.id, target);
   //Remove the close node from the open list
   //If the removed node was the last we can remove the entire list for this key
-  if (cheapestNodes.length == 1 ){
+  if (cheapestNodes.length === 0 ){
     openNodes.delete( target.score );
   } else {
-    openNodes.set(target.score, cheapestNodes.slice(idx,1));
+    openNodes.set(target.score, cheapestNodes);
   }
   //Return the closed node
   return target;
@@ -289,7 +289,7 @@ function distanceToVariable( lhsVariable, rhsVariable, weight, no_weighting=fals
   const typeDef = Types[lhsType]
   if (typeDef == null) throw new Error(`Unsupported type ${lhsType} in distanceToVariable function`)
   const distance = typeDef.comparisonOperators[operator]
-  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not supported for ${lhsVariable.variableId}: ${lhsType}.` ) 
+  if (distance == null) throw new Error( `The selected comparison operation ${operator} is not supported for ${lhsVariable.variableId}: ${lhsType}.` )
   // compute and return the weighted distance
   const wt = no_weighting ? 1.0 : weight
   const d = distance(lhsValue, rhsValue) * wt
