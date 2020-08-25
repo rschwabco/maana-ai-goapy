@@ -17,9 +17,9 @@ async function persistModel(args) {
   const instances = await flattenGoapModel(null, args)
   const svc = await getService(args)
   const modelId = args.workspaceId
-  const TopLevelKinds = ['variables', 'goals', 'initialValues', 'transitions']
+  const TopLevelKinds = ['variables', 'goals', 'initialValues', 'transitions'].filter( x => Object.keys(args).includes(x) && args[x]!=null)
   const names = Object.keys(instances).filter(
-    x => instances[x] && Array.isArray(instances[x]) && instances[x].length > 0
+    x => instances[x] && Array.isArray(instances[x])
   )
   // Construct a dictionary object which contains all the information about the
   // instances being added (or restored), and the queries and mutations to 
