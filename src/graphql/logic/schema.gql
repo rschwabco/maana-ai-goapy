@@ -97,7 +97,6 @@ type Effect {
     variableId: ID!
     assignmentOperator: ID!
     argument: VariableOrValue!
-    order: Int!
 }
 
 input EffectInput {
@@ -105,7 +104,6 @@ input EffectInput {
     variableId: ID!
     assignmentOperator: ID!
     argument: VariableOrValueInput!
-    order: Int
 }
 
 """
