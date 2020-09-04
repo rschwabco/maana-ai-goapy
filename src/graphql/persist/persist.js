@@ -17,31 +17,47 @@ async function persistModel(args) {
   const instances = await flattenGoapModel(null, args)
   const svc = await getService(args)
   const modelId = args.workspaceId
-  const TopLevelKinds = ['variables', 'goals', 'initialValues', 'transitions'].filter( x => Object.keys(args).includes(x) && args[x]!=null)
+  const TopLevelKinds = [
+    'variables',
+    'goals',
+    'initialValues',
+    'transitions'
+  ].filter(x => Object.keys(args).includes(x) && args[x] != null)
+  const AllKinds = TopLevelKinds.concat(
+    TopLevelKinds.includes('transitions')
+      ? ['effects', 'conditions', 'variableOrValues']
+      : []
+  )
   const names = Object.keys(instances).filter(
     x => instances[x] && Array.isArray(instances[x])
   )
   // Construct a dictionary object which contains all the information about the
-  // instances being added (or restored), and the queries and mutations to 
+  // instances being added (or restored), and the queries and mutations to
   // modify them.
   const info = Object.fromEntries(
-    names.map(name => [
-      name,
-      {
-        instances: instances[name],
-        getQry: `all${name.charAt(0).toUpperCase() + name.slice(1)}`,
-        delQry: `delete${name.charAt(0).toUpperCase() + name.slice(1)}`,
-        addQry: `add${name.charAt(0).toUpperCase() + name.slice(1)}`,
-        newIds: instances[name].map(x => x.id),
-        oldInstances: [],
-        obsoleteInstances: [],
-        deletedInstances: []
-      }
-    ])
+    names
+      .concat(
+        names.includes('transitions')
+          ? ['effects', 'conditions', 'variableOrValues']
+          : []
+      )
+      .map(name => [
+        name,
+        {
+          instances: instances[name],
+          getQry: `all${name.charAt(0).toUpperCase() + name.slice(1)}`,
+          delQry: `delete${name.charAt(0).toUpperCase() + name.slice(1)}`,
+          addQry: `add${name.charAt(0).toUpperCase() + name.slice(1)}`,
+          newIds: instances[name].map(x => x.id),
+          oldInstances: [],
+          obsoleteInstances: [],
+          deletedInstances: []
+        }
+      ])
   )
   // Get the existing instances of the kind. These will be used to restore
   // existing instances in the case of a failure.
-  for (const name of TopLevelKinds) {
+  for (const name of AllKinds) {
     const obj = info[name]
     try {
       obj.oldInstances = await allInstances(obj.getQry, { svc })
@@ -64,7 +80,7 @@ async function persistModel(args) {
   // exist in the store that are not explicitly listed in the collection
   // need to be removed.
   try {
-    for (const name of TopLevelKinds) {
+    for (const name of AllKinds) {
       // Iterate over the top level kinds, removing any obsoleted
       // instances.
       const obj = info[name]
