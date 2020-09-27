@@ -5,83 +5,37 @@ planning a sequence of actions to satisfy a particular goal. The sequence of act
 depends both upon the goal and the current state of the world and the agent
 performing the actions.
 
-## Components
-This service consists of a single component:
-
-* `maana-ai-goap`: A Node based graphQL microservice that provides the logic for constructing rule based action plans and optimal goal 
-  seeking.
-
-If you wish to use the `Maana AI GOAP` service you will need to deploy the `maana-ai-goap` service and register it with the `Maana Q catalog` service.   
-
-# Prerequisites
-## Dependencies
-The `Maana AI GOAP` service does not depend upon any other services.
-
-## Tools
-You must have docker and kubernetes command line tools,
-the Maana Q command line tool, and you must be logged 
-into your docker repository.   Links for installation of these tools are below:
-
-[Maana CLI](https://www.npmjs.com/package/graphql-cli-maana)
-
-[Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-
-[Docker](https://docs.docker.com/get-docker/) 
-
-
-# Setting the Environment Variables
-Before you deploy you will need to configure the server use the correct
-authentication method and endpoint for your Maana Q cluster. 
-Rename the `.env.template` file in the root folder of this repository to `.env`, and populate the 
-following environment variables with the details for your cluster:
-
+# Building an Image
+To build a docker image of this service, your repository must be in a pristine state (no uncommited changes).   You can start the build process by executing the following instructions from the command line: 
 ```
-CKG_ENDPOINT_URL=
-REACT_APP_PORTAL_AUTH_DOMAIN=
-REACT_APP_PORTAL_AUTH_CLIENT_ID=
-REACT_APP_PORTAL_AUTH_CLIENT_SECRET=
-REACT_APP_PORTAL_AUTH_IDENTIFIER=
-REACT_APP_PORTAL_AUTH_PROVIDER=
+npm run docker-build
+```
+This will build the docker image and tag it with the sha of your current commit
+
+# Testing Your Image
+You can test the docker image that you built by executing the following instruction from the command line:
+```
+npm run docker-run
+```
+If you need to provide environment variables (e.g. for authentication), they can be placed in the .env file in this repository's root folder.   
+
+!!! NOTE: If you add authentication secrets to the repository DO NOT CHECK IT IN !!!
+
+# Publishing
+You can publish the docker image that you built to the github package repository by issuing the following instructions from the command line:
+```
+npm run docker-push
+```
+Once completed, your docker image will be available in the GitHub packages in the [deployment repository](https://github.com/maana-io/goap-deployment)
+
+# Updating the Deployment
+Before you can deploy your newly built docker image, you will need to update the values.yaml file in the [deployment repository](https://github.com/maana-io/goap-deployment/blob/master/values.yaml) so that the value of the logic.version field matches the image tag of the docker image that you want to deploy.   You can also run the command below to get the git sha for the most recent commit:
+```
+git rev-parse --short HEAD
 ```
 
-# Deploying Maana-ai-goap Service
-Deploy this service is using the mdeploy command:
+# Deployment
+To deploy the GOAP Assistant and all its components, you can follow the instructions on the [deployment repository wiki](https://github.com/maana-io/goap-deployment/wiki/Deployment-Instructions).   For deployments to lkg, you can simply clone the deployment repository to your local machine and execute the following instruction from the command line from the root folder of that repository:
 ```
-gql mdeploy
+helm upgrade lkg-goap . -f cluster.yaml
 ```
-
-When prompted, you should provide the following inputs:
-
-```
-? What is the service name? maana-ai-goap
-? What is the path to the folder containing your Dockerfile? .
-? How many pods would you like to spin up? 1
-? What is the port your application is running on? 8050
-```
-
-NOTE After mdeploy is complete, take note of the endpoint URL that is returned. For example:
-```
-The URL for your GraphQL endpoint is
-    http://1.2.3.4:8050/graphql
-```
-
-You will need this to register the service.
-
-# Service Registration
-
-After the service has been deployed, you will need to register it 
-with the `Maana Q catalog` if you wish to use it with the Maana Q 
-platform.   Log into the Maana Q Intelligence Designer and use the add service dialog in the 
-services tab.  Use the details below when registring your service:
-
-```
-SERVICE NAME: Maana AI GOAP
-SERVICE ID:   maana-ai-goap
-SERVICE TYPE: GraphQL
-ENDPOINT URL: **Endpoint URL from MDEPLOY**
-```
-
-For more information on how to register your service, consult 
-the Q platform documentation:
-
-[Service Registration](https://app.gitbook.com/@maana/s/q/training/developer/developer-steel-thread/deploy-and-use-your-service)
