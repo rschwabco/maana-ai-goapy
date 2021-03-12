@@ -1,63 +1,41 @@
-# Goal-Oriented Action Planning (GOAP) in Python for Maana Q
+# Maana AI GOAP 
+This service provides a GraphQL interface for Goal Oriented Action Planning
+(GOAP).   Goal oriented action planning is an artificial intelligence algorithm for 
+planning a sequence of actions to satisfy a particular goal. The sequence of actions 
+depends both upon the goal and the current state of the world and the agent
+performing the actions.
 
-- Uses the [Python (Ariadne) Maana Q Knowledge Service](https://github.com/maana-io/q-template-service-python-ariadne) template
-- Containerization is done using the [Uvicorn+Gunicorn Docker](https://github.com/tiangolo/uvicorn-gunicorn-docker) base image
-- Uses the [GOAPy](https://github.com/flags/GOAPy) library for AI planning
-
-## Build
-
+# Building an Image
+To build a docker image of this service, your repository must be in a pristine state (no uncommited changes).   You can start the build process by executing the following instructions from the command line: 
 ```
-pip install uvicorn gunicorn ariadne graphqlclient asgi-lifespan
+npm run docker-build
 ```
+This will build the docker image and tag it with the sha of your current commit
 
-## Containerize
-
-Then you can build your image from the directory that has your Dockerfile, e.g:
-
+# Testing Your Image
+You can test the docker image that you built by executing the following instruction from the command line:
 ```
-docker build -t maana-ai-goap ./
+npm run docker-run
 ```
+If you need to provide environment variables (e.g. for authentication), they can be placed in the .env file in this repository's root folder.   
 
-## Run Debug Locally
+!!! NOTE: If you add authentication secrets to the repository DO NOT CHECK IT IN !!!
 
-To run the GraphQL service locally with hot reload:
-
+# Publishing
+You can publish the docker image that you built to the github package repository by issuing the following instructions from the command line:
 ```
-./start-reload.sh
+npm run docker-push
 ```
+Once completed, your docker image will be available in the GitHub packages in the [deployment repository](https://github.com/maana-io/goap-deployment)
 
-For details, please refer to the [official documentation](https://github.com/tiangolo/uvicorn-gunicorn-fastapi-docker#development-live-reload).
-
-## Run Locally (via Docker)
-
-To run the GraphQL service locally (Via Docker):
-
+# Updating the Deployment
+Before you can deploy your newly built docker image, you will need to update the values.yaml file in the [deployment repository](https://github.com/maana-io/goap-deployment/blob/master/values.yaml) so that the value of the logic.version field matches the image tag of the docker image that you want to deploy.   You can also run the command below to get the git sha for the most recent commit:
 ```
-docker run -it -p 4000:80 -t maana-ai-goap
+git rev-parse --short HEAD
 ```
 
-## Run Debug Locally (via Docker)
-
-To run the GraphQL service via Docker with hot reload:
-
+# Deployment
+To deploy the GOAP Assistant and all its components, you can follow the instructions on the [deployment repository wiki](https://github.com/maana-io/goap-deployment/wiki/Deployment-Instructions).   For deployments to lkg, you can simply clone the deployment repository to your local machine and execute the following instruction from the command line from the root folder of that repository:
 ```
-docker run -it -p 4000:80 -v $(pwd):/app maana-ai-goap /start-reload-docker.sh
-```
-
-For details, please refer to the [official documentation](https://github.com/tiangolo/uvicorn-gunicorn-fastapi-docker#development-live-reload).
-
-## Deploy
-
-```
-gql mdeploy
-```
-
-and follow the prompts, resulting in something resembling:
-
-```bash
-Deploying the service maana-ai-goap:v1.0.0
-Located in .
-Publishing to services.azurecr.io
-Number Of Pods: 1
-Exposing port 80
+helm upgrade lkg-goap . -f cluster.yaml
 ```

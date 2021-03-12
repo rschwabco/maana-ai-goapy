@@ -1,0 +1,204 @@
+type Info {
+    id: ID!
+    name: String!
+    description: String
+}
+
+
+"""
+A variable represents an observable of the worldstate.  
+"""
+type Variable {
+    """
+    A unique identifier for the variable.  
+    """
+    id: ID!
+    "An optional description of the variable"
+    description: String
+    """
+    The type of scalar values that can be assigned to the variable.
+    Must be one of: STRING, INT, BOOLEAN or FLOAT.
+    """
+    typeOf: String!
+    """
+    A weighting factor used to compute the weighted distance 
+    between two worldstates which contain this variable.  
+    This factor can be used to prevent variables with very large
+    values from swamping the distance calculation.   If in doubt 
+    use a value of 1.0.
+    """
+    weight: Float!
+}
+
+input VariableInput {
+  id: ID
+  typeOf: String!
+  description: String
+  weight: Float
+}
+
+"""
+A 'union' type representing a scalar value that can be 
+assigned to a variable.  Exactly one of the optional fields
+must be provided.
+"""
+type VariableValue {
+    id: ID!
+    variableId: ID!
+    STRING: String
+    FLOAT: Float
+    INT: Int
+    BOOLEAN: Boolean
+}
+
+input VariableValueInput {
+    id: ID
+    variableId: ID!
+    STRING: String
+    FLOAT: Float
+    INT: Int
+    BOOLEAN: Boolean
+}
+
+"""
+A 'union' type representing a scalar value or variable 
+that can occur on the right hand side of a effect or 
+constraint.
+"""
+type VariableOrValue {
+    id: ID!
+    variableId: ID
+    STRING: String
+    FLOAT: Float
+    INT: Int
+    BOOLEAN: Boolean
+}
+
+input VariableOrValueInput {
+    id: ID
+    variableId: ID 
+    STRING: String
+    FLOAT: Float 
+    INT: Int 
+    BOOLEAN: Boolean
+}
+
+
+"""
+An effect is a reassignment of the value associated 
+with a variable.   Depending on the type of the variable, 
+reassignment may perform logical or arithmetic operations
+to combine the previous value with the provided argument.
+To be well formed, the variable, operator and argument 
+must all have the same type.
+"""
+type Effect {
+    id: ID!
+    variableId: ID!
+    assignmentOperator: ID!
+    argument: VariableOrValue!
+}
+
+input EffectInput {
+    id: ID
+    variableId: ID!
+    assignmentOperator: ID!
+    argument: VariableOrValueInput!
+}
+
+"""
+A condition is a logical expression that must be satisfied
+in order for a transition to be enabled.   To be well formed
+the variable, operator and argument must all have the same
+type.
+"""
+type Condition {
+    id: ID!
+    variableId: ID!
+    comparisonOperator: ID!
+    argument: VariableOrValue!
+}
+
+input ConditionInput {
+    id: ID 
+    variableId: ID!
+    comparisonOperator: ID!
+    argument: VariableOrValueInput!
+}
+
+"""
+A transition is a conditional behavior, which may occur
+whenever its all its conditions are satisfied by the 
+worldstate.   For the purpose of planning, firing the 
+transition is assumed to produce a number of effects which 
+modify the worldstate.   Optionally it may produce an 
+action, which will be returned as part of the optimal 
+action plan.
+"""
+type Transition {
+    "A globally unique identifier for the transaction"
+    id: ID!
+    "An optional description of the transaction"
+    description: String
+    """
+    A collection of conditions that must be satisfied by
+    the worldstate in order for the transaction to be 
+    enabled. 
+    """
+    conditions: [ Condition! ]!
+    """
+    The identifier for an action that should be added to 
+    the action plan as a result of the transaction firing.
+    """
+    action: ID
+    """
+    A collection of mutations to perform on the worldstate
+    variables whenever the transaction fires.
+    """
+    effects: [ Effect! ]!
+    """
+    The cost basis of the transaction used for planning 
+    purposes. 
+    """
+    cost: Float!
+}
+
+input TransitionInput {
+    id: ID!
+    description: String
+    conditions: [ConditionInput]
+    action: ID
+    effects: [ EffectInput ]
+    cost: Float
+}
+
+type ActionPlan {
+    id: ID!
+    actions: [ ID! ]!
+    transitions: [ ID! ]!
+    totalSteps: Int!
+    totalCost: Float!
+    initialState: [VariableValue!]!
+    finalState: [VariableValue!]!
+    status: String!
+}
+
+type Query {
+    info: Info!
+
+    """Given a collection of goap state variables, a goap state and a transition, return the result of applying the transition."""
+    areGoalsSatisfied(variables:[VariableInput!]!, state:[VariableValueInput!]!, goals:[ConditionInput]):Boolean!
+    
+    """Given a collection of goap state variables, a goap state and a transition, return the result of applying the transition.  Returns null if the transition is not enabled."""
+    singleStep(variables:[VariableInput!]!, state:[VariableValueInput!]!, transition:TransitionInput!):[VariableValue!]!
+
+    """Given a goap model and the current state, return the identifiers for the enabled transitions."""
+    enabledTransitions(variables:[VariableInput!]!, state:[VariableValueInput!]!, transitions:[TransitionInput!]!):[ID!]!
+
+    """
+    Given a collection of variables and transitions, an intial state, and a collection of goal conditions, what is the least
+    cost action plan that acheives that goal?
+    """
+    generateActionPlan( variables: [VariableInput!]!, transitions: [TransitionInput!]!, initialState: [VariableValueInput!]!, goal: [ConditionInput!]! ): ActionPlan!    
+}
+

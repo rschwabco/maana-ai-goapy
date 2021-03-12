@@ -1,0 +1,8 @@
+{
+  "extends": ["eslint:recommended", "standard", "prettier", "plugin:ava/recommended"],
+  "plugins": ["prettier", "ava"],
+  "rules": {
+    "prettier/prettier": ["error"],
+    "curly": ["error", "all"]
+  }
+}
