@@ -17,10 +17,10 @@ function mkId(x) {
       x.comparisonOperator}${mkId(x.argument)}`
   } else {
     return `${x.variableId ||
-      ifnotnull(x.STRING, z => `"${z}"`) ||
-      ifnotnull(x.INT, z => `${z}`) ||
-      ifnotnull(x.BOOLEAN, z => `${z}`) ||
-      ifnotnull(x.FLOAT, z => `${z}`)}`
+      ifnotnull(x.STRING, z => `"${z}":STRING`) ||
+      ifnotnull(x.INT, z => `${z}:INT`) ||
+      ifnotnull(x.BOOLEAN, z => `${z}:BOOLEAN`) ||
+      ifnotnull(x.FLOAT, z => `${z}:FLOAT`)}`
   }
 }
 
