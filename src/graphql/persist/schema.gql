@@ -70,6 +70,7 @@ input EffectInput {
     variableId: ID!
     assignmentOperator: ID!
     argument: VariableOrValueInput!
+    order: Int
 }
 
 """
