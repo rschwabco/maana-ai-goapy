@@ -4,6 +4,67 @@ type Info {
     description: String
 }
 
+"""
+A goal oriented action planning model.    
+"""
+type GoapModel {
+    """
+    A unique identifier for the goap model.  
+    """
+    id: ID!
+    """ 
+    An optional human readable description for the model.
+    """
+    description: String
+    """
+    The variables of the model.   These represent the collection of overservables (precepts)
+    that may be used to trigger transitions or express goal states.
+    """
+    variables: [Variable!]!
+    """
+    The transitions of the model.   Each transition represents a potential change in the state 
+    of the system.  
+    """
+    transitions: [Transition!]!
+    """
+    The state of the system at the beginning of the planning session
+    """
+    initialValues: [VariableValue!]!
+    """
+    The goals that must be satisfied by the action plan.
+    """
+    goals: [Condition!]!
+}
+
+input GoapModelInput {
+    """
+    A unique identifier for the goap model.  
+    """
+    id: ID!
+    """ 
+    An optional human readable description for the model.
+    """
+    description: String
+    """
+    The variables of the model.   These represent the collection of overservables (precepts)
+    that may be used to trigger transitions or express goal states.
+    """
+    variables: [VariableInput!]!
+    """
+    The transitions of the model.   Each transition represents a potential change in the state 
+    of the system.  
+    """
+    transitions: [TransitionInput!]!
+    """
+    The state of the system at the beginning of the planning session
+    """
+    initialValues: [VariableValueInput!]!
+    """
+    The goals that must be satisfied by the action plan.
+    """
+    goals: [ConditionInput!]!
+}
+
 
 """
 A variable represents an observable of the worldstate.  
@@ -200,5 +261,50 @@ type Query {
     cost action plan that acheives that goal?
     """
     generateActionPlan( variables: [VariableInput!]!, transitions: [TransitionInput!]!, initialState: [VariableValueInput!]!, goal: [ConditionInput!]! ): ActionPlan!    
+
+    """
+        What types can be assigned to variables?
+    """
+    variableTypes: [ID!]!
+
+    """
+    Given a type, what are the assignment operators that are defined for variables of that type?
+    """
+    assignmentOperators( variableType: ID! ): [ID!]!
+
+    """
+    Given a type, what are the comparison operations that are defined for variables of that type?
+    """
+    comparisonOperators( variableType: ID! ): [ID!]!
+
+    """ 
+    Given a goap model, replace all occurences of a variable with one of the same type, but a different name.
+    If the replacement would result in an ill formed model, then return null, otherwise return the new model.
+    """
+    renameVariable( model: GoapModelInput!, oldId: ID!, newId: ID!): Boolean!
+    
+    """ Given a goap model, replace all occurences of a variable with one of the same name, but a different type.  
+    If the replacement would result in an ill formed model, then return null, otherwise return the new model.
+    """
+    retypeVariable( model: GoapModelInput!, id: ID!, typeOf: ID!): GoapModel
+    
+    """ Given a goap model, remove all occurences of a variable.  If the removal would result in an ill formed 
+    model, then return null, otherwise return the new model.
+    """
+    removeVariable( model: GoapModelInput!, id: ID!): GoapModel
+
+    """ Given a goap model, remove a transition.  If the removal would result in an ill formed 
+    model, then return null, otherwise return the new model.
+    """
+    removeTransition(model: GoapModelInput!, id: ID!): GoapModel
+    """ Given a goap model, remove a goal.  If the removal would result in an ill formed 
+    model, then return null, otherwise return the new model.
+    """
+    removeGoal(model: GoapModelInput!, id: ID!): GoapModel
+    """ Given a goap model, remove an initial value.  If the removal would result in an ill formed 
+    model, then return null, otherwise return the new model.
+    """
+    removeInitialValue(model: GoapModelInput!, id: ID!): GoapModel
+
 }
 

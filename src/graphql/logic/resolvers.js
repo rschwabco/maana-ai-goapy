@@ -1,16 +1,8 @@
 import { gql } from 'apollo-server-express'
-
+import Updaters from './update'
+import Removers from './remove'
+import { Types } from '../common/types/constants'
 import { SELF_ID } from '../../constants'
-import { logger } from '../common/types/constants'
-import { GoapModel } from '../common/types/GoapModel'
-import { Variable } from '../common/types/Variable'
-import { Transition } from '../common/types/Transition'
-import { Effect } from '../common/types/Effect'
-import { Condition } from '../common/types/Condition'
-import { VariableValue } from '../common/types/VariableValue'
-import { objectFromInstance } from 'io.maana.shared/dist/KindDBSvc'
-import { WorldState } from '../common/types/WorldState'
-import { Goal }  from '../common/types/Goal'
 import { areGoalsSatisfied, singleStep, enabledTransitions }  from './plan'
 const workerFarm = require('worker-farm')
 
@@ -65,6 +57,11 @@ export const logicResolver = {
     },
     enabledTransitions,
     areGoalsSatisfied,
-    singleStep
+    singleStep,
+    assignmentOperators: (_,{variableType}) => Types[variableType] ? Object.keys(Types[variableType].assignmentOperators) : [],
+    comparisonOperators: (_,{variableType}) => Types[variableType] ? Object.keys(Types[variableType].comparisonOperators) : [],
+    variableTypes: _ => Object.keys(Types),
+    ...Updaters,
+    ...Removers
   }
 }
