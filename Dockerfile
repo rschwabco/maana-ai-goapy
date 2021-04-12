@@ -12,4 +12,4 @@ COPY .babelrc /app
 CMD npm start
 
 EXPOSE 8050
-EXPOSE 8051
+

@@ -10,17 +10,13 @@ import express from 'express'
 // Keep GraphQL stuff nicely factored
 import http from 'http'
 // GraphQL schema compilation
-import { initAuthenticatedClient as authenticatedClient } from './client'
 import { logicResolver } from './graphql/logic/resolvers'
-import { persistResolver } from './graphql/persist/resolvers'
 import {
   CKG_ENDPOINT_URL,
   HOSTNAME,
   LOGICPORT,
   BASE_ID,
   LOGIC_SVC_ID,
-  PERSISTPORT,
-  PERSIST_SVC_ID,
   PUBLICNAME
 } from './constants'
 import { importSchema } from 'graphql-import'
@@ -57,21 +53,12 @@ const initServer = async options => {
   // eslint-disable-next-line no-unused-vars
   const { httpAuthMiddleware, socketAuthMiddleware } = options
   initMetrics(BASE_ID.replace(/[\W_]+/g, ''))
-  // Create OIDC token URL for the specified auth provider (default to auth0).
-  const client = await authenticatedClient(CKG_ENDPOINT_URL)
 
   const app = initApp()
-  const app2 = initApp()
   const httpServer = http.createServer(app)
-  const httpServer2 = http.createServer(app2)
   httpServer.listen({ port: LOGICPORT }, async () => {
     log(LOGIC_SVC_ID).info(
       `listening on ${print.external(`http://${PUBLICNAME}:${LOGICPORT}/graphql`)}`
-    )
-  })
-  httpServer2.listen({ port: PERSISTPORT }, async () => {
-    log(PERSIST_SVC_ID).info(
-      `listening on ${print.external(`http://${PUBLICNAME}:${PERSISTPORT}/graphql`)}`
     )
   })
   const logicServer = new ApolloServer({
@@ -79,39 +66,15 @@ const initServer = async options => {
     typeDefs: importSchema("./src/graphql/logic/schema.gql"),
     subscriptions: {
       onConnect: socketAuthMiddleware || defaultSocketMiddleware
-    },
-    context: async ({ req }) => {
-      return {
-        client
-      }
     }
   })
-  const persistServer = new ApolloServer({
-    resolvers: persistResolver,
-    typeDefs: importSchema("./src/graphql/persist/schema.gql"),
-    subscriptions: {
-      onConnect: socketAuthMiddleware || defaultSocketMiddleware
-    },
-    context: async ({ req }) => {
-      return {
-        client
-      }
-    }
-  }) 
   logicServer.applyMiddleware({
     app,
     bodyParserConfig: {
       limit: '20mb'
     }
   })
-  persistServer.applyMiddleware({
-    app: app2,
-    bodyParserConfig: {
-      limit: '20mb'
-    }
-  })
   logicServer.installSubscriptionHandlers(httpServer)
-  persistServer.installSubscriptionHandlers(httpServer2)
 }
 
 export default initServer
