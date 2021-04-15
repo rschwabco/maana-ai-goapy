@@ -34,7 +34,7 @@ async function renameVariable(args) {
     throw new Error(msg)
   }
 
-  const { id, transitions, goals, initialValues } = model
+  const { id, name, transitions, goals, initialValues } = model
   const replaceVarId = x => {
     if (x.variableId === oldId) {
       x.variableId = newId
@@ -63,7 +63,7 @@ async function renameVariable(args) {
   for (const x of initialValues) {
     replaceVarId(x)
   }
-  return { id, variables, transitions, goals, initialValues }
+  return { id, name, variables, transitions, goals, initialValues }
 }
 
 /** * Given a GOAP problem, update the type of one the variables
@@ -98,7 +98,7 @@ async function retypeVariable(args) {
   const oldType = oldVs[0].typeOf
   const itsValue = Types[typeOf].defaultValue
   const oldValue = Types[oldType].defaultValue
-  const { id: modelId, transitions, goals, initialValues } = model
+  const { id: modelId, name, transitions, goals, initialValues } = model
 
   const update = (x, op) => {
     if (x.variableId === id) {
@@ -139,7 +139,7 @@ async function retypeVariable(args) {
   }
 
   logger.info(`Retyped variable ${id} to ${typeOf} in workspace ${workspaceId}`)
-  return { modelId, variables, transitions, goals, initialValues }
+  return { modelId, name, variables, transitions, goals, initialValues }
 }
 
 module.exports = {

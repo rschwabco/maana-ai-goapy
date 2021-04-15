@@ -31,7 +31,7 @@ async function removeVariable(args) {
 
   const variables = allVS.filter(x => x.id !== id)
 
-  const { transitions, allGS, allIVS } = model
+  const { transitions, name, allGS, allIVS } = model
   const goals = allGS.filter(x => x.variableId !== id)
   const initialValues = allIVS.filter(x => x.variableId !== id)
 
@@ -55,7 +55,7 @@ async function removeVariable(args) {
     replaceArg(x)
   }
   logger.info(`Removed variable ${id} from model ${model.id}`)
-  return { id: model.id, variables, transitions, initialValues, goals }
+  return { id: model.id, name, variables, transitions, initialValues, goals }
 }
 
 module.exports = {
