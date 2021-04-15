@@ -31,8 +31,8 @@ async function removeVariable(args) {
 
   const variables = allVS.filter(x => x.id !== id)
 
-  const { transitions, allGS, allIVS } = model
-  const goals = allGS.filter(x => x.variableId !== id)
+  const { transitions, goals, initialValues: allIVS } = model
+  const goals = goals.filter(x => x.variableId !== id)
   const initialValues = allIVS.filter(x => x.variableId !== id)
 
   const replaceArg = x => {
