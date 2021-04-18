@@ -12,6 +12,10 @@ type GoapModel {
     A unique identifier for the goap model.  
     """
     id: ID!
+    """
+    The human readable name of the model.
+    """
+    name: String!
     """ 
     An optional human readable description for the model.
     """
@@ -41,6 +45,10 @@ input GoapModelInput {
     A unique identifier for the goap model.  
     """
     id: ID!
+    """
+    The human readable name of the model.
+    """
+    name: String!
     """ 
     An optional human readable description for the model.
     """
