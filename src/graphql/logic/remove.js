@@ -31,7 +31,9 @@ async function removeVariable(args) {
 
   const variables = allVS.filter(x => x.id !== id)
 
-  const { transitions, name, allGS, allIVS } = model
+
+  const { transitions, name, goals: allGS, initialValues: allIVS } = model
+
   const goals = allGS.filter(x => x.variableId !== id)
   const initialValues = allIVS.filter(x => x.variableId !== id)
 
@@ -60,7 +62,7 @@ async function removeVariable(args) {
 
 module.exports = {
   removeVariable: async (_, input) => removeVariable(input),
-  removeTransition: async (_, input) => { return {...input.model, transitions: model.transitions.filter(x=>x.id!==id)}},
-  removeGoal: async (_, input) => { return {...input.model, goals: model.goals.filter(x=>x.id!==id)}},
-  removeInitialValue: async (_, input) => { return {...input.model, initialValues: model.initialValues.filter(x=>x.id!==id)}}
+  removeTransition: async (_, input) => { return {...input.model, transitions: input.model.transitions.filter(x=>x.id!==input.id)}},
+  removeGoal: async (_, input) => { return {...input.model, goals: input.model.goals.filter(x=>x.id!==input.id)}},
+  removeInitialValue: async (_, input) => { return {...input.model, initialValues: input.model.initialValues.filter(x=>x.id!==input.id)}}
 }
