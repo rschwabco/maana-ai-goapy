@@ -82,6 +82,11 @@ type Variable {
     A unique identifier for the variable.  
     """
     id: ID!
+    """
+    A human readable identifier for the variable.  For example "fuel_remaining".   
+    names must be unique, and may only contain alpha numeric characters, and underscores.
+    """
+    name: String!
     "An optional description of the variable"
     description: String
     """
@@ -101,6 +106,7 @@ type Variable {
 
 input VariableInput {
   id: ID
+  name: String!
   typeOf: String!
   description: String
   weight: Float
@@ -207,6 +213,11 @@ action plan.
 type Transition {
     "A globally unique identifier for the transaction"
     id: ID!
+    """
+    A human readable identifier for the transition.  For example "Repair_Vehicle".   
+    Names must be unique, and may only contain alpha numeric characters, and underscores.
+    """
+    name: String!
     "An optional description of the transaction"
     description: String
     """
@@ -234,6 +245,7 @@ type Transition {
 
 input TransitionInput {
     id: ID!
+    name: String!
     description: String
     conditions: [ConditionInput]
     action: ID
@@ -284,13 +296,7 @@ type Query {
     Given a type, what are the comparison operations that are defined for variables of that type?
     """
     comparisonOperators( variableType: ID! ): [ID!]!
-
-    """ 
-    Given a goap model, replace all occurences of a variable with one of the same type, but a different name.
-    If the replacement would result in an ill formed model, then return null, otherwise return the new model.
-    """
-    renameVariable( model: GoapModelInput!, oldId: ID!, newId: ID!): Boolean!
-    
+   
     """ Given a goap model, replace all occurences of a variable with one of the same name, but a different type.  
     If the replacement would result in an ill formed model, then return null, otherwise return the new model.
     """
@@ -300,19 +306,6 @@ type Query {
     model, then return null, otherwise return the new model.
     """
     removeVariable( model: GoapModelInput!, id: ID!): GoapModel
-
-    """ Given a goap model, remove a transition.  If the removal would result in an ill formed 
-    model, then return null, otherwise return the new model.
-    """
-    removeTransition(model: GoapModelInput!, id: ID!): GoapModel
-    """ Given a goap model, remove a goal.  If the removal would result in an ill formed 
-    model, then return null, otherwise return the new model.
-    """
-    removeGoal(model: GoapModelInput!, id: ID!): GoapModel
-    """ Given a goap model, remove an initial value.  If the removal would result in an ill formed 
-    model, then return null, otherwise return the new model.
-    """
-    removeInitialValue(model: GoapModelInput!, id: ID!): GoapModel
 
 }
 

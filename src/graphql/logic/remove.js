@@ -41,6 +41,8 @@ async function removeVariable(args) {
     if (x.argument.variableId === id) {
       x.argument.variableId = null
       x.argument[itsType] = itsValue
+      x.argument.id = `${itsValue}:${itsType}`
+      x.id = `${x.variableId}${x.assignmentOperator||x.comparisonOperator ||"="}:${itsValue}`
     }
   }
   for (const t of transitions) {
@@ -62,7 +64,4 @@ async function removeVariable(args) {
 
 module.exports = {
   removeVariable: async (_, input) => removeVariable(input),
-  removeTransition: async (_, input) => { return {...input.model, transitions: input.model.transitions.filter(x=>x.id!==input.id)}},
-  removeGoal: async (_, input) => { return {...input.model, goals: input.model.goals.filter(x=>x.id!==input.id)}},
-  removeInitialValue: async (_, input) => { return {...input.model, initialValues: input.model.initialValues.filter(x=>x.id!==input.id)}}
 }
