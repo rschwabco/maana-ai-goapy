@@ -31,7 +31,7 @@ function assignOp(op) {
 }
 
 function getOperatorDescription(id) {
- const tooltips = {
+ const descriptions = {
   '==': 'Is equal to',
   '!=': 'Is not equal to',
   '>': 'Greater than',
@@ -49,11 +49,11 @@ function getOperatorDescription(id) {
   '*=': 'Multiply by'
  }
  
- return tooltips[id] ? tooltips[id] : ''
+ return descriptions[id] ? descriptions[id] : ''
 }
 
 function getOperatorExample(id) {
- const tooltips = {
+ const examples = {
   '==': '',
   '!=': '',
   '>': '',
@@ -71,7 +71,7 @@ function getOperatorExample(id) {
   '%=': 'Needs example',
  }
  
- return tooltips[id] ? tooltips[id] : ''
+ return examples[id] ? examples[id] : ''
 }
 
 module.exports = {
