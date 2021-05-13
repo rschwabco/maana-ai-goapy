@@ -1,14 +1,23 @@
 import { gql } from 'apollo-server-express'
 import Updaters from './update'
 import Removers from './remove'
-import { Types } from '../common/types/constants'
+import { getOperatorExample, getOperatorDescription, Types } from '../common/types/constants'
 import { SELF_ID } from '../../constants'
 import { areGoalsSatisfied, singleStep, enabledTransitions }  from './plan'
+import descriptions from '../common/types/descriptions'
 const workerFarm = require('worker-farm')
 
 const workers = workerFarm({ maxRetries: 0 }, require.resolve('./plan'),['generateActionPlan'])
 
 require('dotenv').config()
+
+const constructOperator = (id) => {
+ return {
+  id,
+  description: getOperatorDescription(id),
+  example: getOperatorExample(id)
+ }
+}
 
 export const logicResolver = {
   Query: {
@@ -58,8 +67,8 @@ export const logicResolver = {
     enabledTransitions,
     areGoalsSatisfied,
     singleStep,
-    assignmentOperators: (_,{variableType}) => Types[variableType] ? Object.keys(Types[variableType].assignmentOperators) : [],
-    comparisonOperators: (_,{variableType}) => Types[variableType] ? Object.keys(Types[variableType].comparisonOperators) : [],
+    assignmentOperators: (_,{variableType}) => Types[variableType] ? Object.keys(Types[variableType].assignmentOperators).map(operator => constructOperator(operator)) : [],
+    comparisonOperators: (_,{variableType}) => Types[variableType] ? Object.keys(Types[variableType].comparisonOperators).map(operator => constructOperator(operator)) : [],
     variableTypes: _ => Object.keys(Types),
     ...Updaters,
     ...Removers

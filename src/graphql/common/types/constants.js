@@ -30,6 +30,49 @@ function assignOp(op) {
   }
 }
 
+function getOperatorDescription(id) {
+ const tooltips = {
+  '==': 'Is equal to',
+  '!=': 'Is not equal to',
+  '>': 'Greater than',
+  '>=': 'Equal or greater than',
+  '<': 'Less than',
+  '<=': 'Equal or less than',
+  '=': 'Assign to',
+  '+=': 'Add',
+  '-=': 'Subtract',
+  '&=': 'Logical AND',
+  '^=': 'Logical exclusive OR',
+  '|=': 'Logical OR',
+  '/=': 'Divide by',
+  '%=': 'Integer remainder',
+  '*=': 'Multiply by'
+ }
+ 
+ return tooltips[id] ? tooltips[id] : ''
+}
+
+function getOperatorExample(id) {
+ const tooltips = {
+  '==': '',
+  '!=': '',
+  '>': '',
+  '>=': '',
+  '<': '',
+  '<=': '',
+  '=': '',
+  '+=': '',
+  '-=': '',
+  '/=': '',
+  '*=': '',
+  '&=': 'Needs example',
+  '^=': 'Needs example',
+  '|=': 'Needs example',
+  '%=': 'Needs example',
+ }
+ 
+ return tooltips[id] ? tooltips[id] : ''
+}
 
 module.exports = {
   MIN_PROPERTY_DISTANCE,
@@ -37,6 +80,8 @@ module.exports = {
   logiclogger,
   logger,
   persistlogger,
+  getOperatorDescription,
+  getOperatorExample,
   Types: {
     "BOOLEAN": {
       defaultValue: false,

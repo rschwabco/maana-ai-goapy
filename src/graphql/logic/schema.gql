@@ -264,6 +264,12 @@ type ActionPlan {
     status: String!
 }
 
+type Operator {
+ id: ID!
+ description: String
+ example: String
+}
+
 type Query {
     info: Info!
 
@@ -290,12 +296,12 @@ type Query {
     """
     Given a type, what are the assignment operators that are defined for variables of that type?
     """
-    assignmentOperators( variableType: ID! ): [ID!]!
+    assignmentOperators( variableType: ID! ): [Operator!]!
 
     """
     Given a type, what are the comparison operations that are defined for variables of that type?
     """
-    comparisonOperators( variableType: ID! ): [ID!]!
+    comparisonOperators( variableType: ID! ): [Operator!]!
    
     """ Given a goap model, replace all occurences of a variable with one of the same name, but a different type.  
     If the replacement would result in an ill formed model, then return null, otherwise return the new model.
