@@ -4,7 +4,6 @@ import Removers from './remove'
 import { getOperatorExample, getOperatorDescription, Types } from '../common/types/constants'
 import { SELF_ID } from '../../constants'
 import { areGoalsSatisfied, singleStep, enabledTransitions }  from './plan'
-import descriptions from '../common/types/descriptions'
 const workerFarm = require('worker-farm')
 
 const workers = workerFarm({ maxRetries: 0 }, require.resolve('./plan'),['generateActionPlan'])
