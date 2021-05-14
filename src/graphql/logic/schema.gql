@@ -304,7 +304,7 @@ type Query {
     comparisonOperators( variableType: ID! ): [Operator!]!
    
    """
-   A list of Operator tooltips
+   A list of Operator with their Tooltips
    """
     operatorTooltips: [Operator!]!
     """ Given a goap model, replace all occurences of a variable with one of the same name, but a different type.  

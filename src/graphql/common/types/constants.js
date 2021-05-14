@@ -85,25 +85,21 @@ const operatorTooltips = [
   id: '^=', 
   description: 'Logical exclusive OR',
   example: ''
-  
  },
  {
   id: '|=', 
   description: 'Logical OR',
   example: '',
-  
  },
  {
   id: '/=', 
   description: 'Divide by',
   example: ''
-  
  },
  {
   id: '%=', 
   description: 'Integer remainder',
   example: ''
-  
  },
  {
   id: '*=', 
@@ -112,11 +108,10 @@ const operatorTooltips = [
  } 
 ]
 
+// * Given an id, return the matching operator object
 function getOperatorTooltip(id) {
  return operatorTooltips.find(operator => operator.id === id)
 }
-
-
 
 module.exports = {
   MIN_PROPERTY_DISTANCE,
