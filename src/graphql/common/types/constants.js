@@ -30,49 +30,93 @@ function assignOp(op) {
   }
 }
 
-function getOperatorDescription(id) {
- const descriptions = {
-  '==': 'Is equal to',
-  '!=': 'Is not equal to',
-  '>': 'Greater than',
-  '>=': 'Equal or greater than',
-  '<': 'Less than',
-  '<=': 'Equal or less than',
-  '=': 'Assign to',
-  '+=': 'Add',
-  '-=': 'Subtract',
-  '&=': 'Logical AND',
-  '^=': 'Logical exclusive OR',
-  '|=': 'Logical OR',
-  '/=': 'Divide by',
-  '%=': 'Integer remainder',
-  '*=': 'Multiply by'
- }
- 
- return descriptions[id] ? descriptions[id] : ''
+const operatorTooltips = [
+ {
+  id: '==', 
+  description: 'Is equal to',
+  example: ''
+ },
+ {
+  id: '!=', 
+  description: 'Is not equal to',
+  example: ''
+ },
+ {
+  id: '>', 
+  description: 'Greater than',
+  example: ''
+ },
+ {
+  id: '>=', 
+  description: 'Equal or greater than',
+  example: ''
+ },
+ {
+  id: '<', 
+  description: 'Less than',
+  example: ''
+ },
+ {
+  id: '<=', 
+  description: 'Equal or less than',
+  example: ''
+ },
+ {
+  id: '=', 
+  description: 'Assign to',
+  example: ''
+ },
+ {
+  id: '+=', 
+  description: 'Add',
+  example: ''
+ },
+ {
+  id: '-=', 
+  description: 'Subtract',
+  example: ''
+ },
+ {
+  id: '&=', 
+  description: 'Logical AND',
+  example: ''
+ },
+ {
+  id: '^=', 
+  description: 'Logical exclusive OR',
+  example: ''
+  
+ },
+ {
+  id: '|=', 
+  description: 'Logical OR',
+  example: '',
+  
+ },
+ {
+  id: '/=', 
+  description: 'Divide by',
+  example: ''
+  
+ },
+ {
+  id: '%=', 
+  description: 'Integer remainder',
+  example: ''
+  
+ },
+ {
+  id: '*=', 
+  description: 'Multiply by',
+  example: ''
+ } 
+]
+
+function getOperatorTooltip(id) {
+ return operatorTooltips.find(operator => operator.id === id)
 }
 
-function getOperatorExample(id) {
- const examples = {
-  '==': '',
-  '!=': '',
-  '>': '',
-  '>=': '',
-  '<': '',
-  '<=': '',
-  '=': '',
-  '+=': '',
-  '-=': '',
-  '/=': '',
-  '*=': '',
-  '&=': 'Needs example',
-  '^=': 'Needs example',
-  '|=': 'Needs example',
-  '%=': 'Needs example',
- }
- 
- return examples[id] ? examples[id] : ''
-}
+
 
 module.exports = {
   MIN_PROPERTY_DISTANCE,
@@ -80,8 +124,8 @@ module.exports = {
   logiclogger,
   logger,
   persistlogger,
-  getOperatorDescription,
-  getOperatorExample,
+  operatorTooltips,
+  getOperatorTooltip,
   Types: {
     "BOOLEAN": {
       defaultValue: false,

@@ -266,7 +266,7 @@ type ActionPlan {
 
 type Operator {
  id: ID!
- description: String
+ description: String!
  example: String
 }
 
@@ -303,6 +303,10 @@ type Query {
     """
     comparisonOperators( variableType: ID! ): [Operator!]!
    
+   """
+   A list of Operator tooltips
+   """
+    operatorTooltips: [Operator!]!
     """ Given a goap model, replace all occurences of a variable with one of the same name, but a different type.  
     If the replacement would result in an ill formed model, then return null, otherwise return the new model.
     """
